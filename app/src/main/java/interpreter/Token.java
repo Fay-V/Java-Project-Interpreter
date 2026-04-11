@@ -1,4 +1,4 @@
-package java.project.interpreter;
+package interpreter;
 
 
 public class Token {
