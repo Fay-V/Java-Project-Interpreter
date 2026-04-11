@@ -3,12 +3,41 @@
  */
 package java.project.interpreter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.*;
+import java.util.List;
+
 public class App {
+    private static final Logger logger = Logger.getLogger("");
+
     public String getGreeting() {
         return "Hello World!";
     }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        if (args.length == 0) {
+            logger.info("Missing source file argument.");
+            System.exit(1);
+        }
+        
+        String sourceFile = "";
+
+        try{
+            sourceFile = readFile(args[0]);
+        }catch (IOException e) {
+            logger.info("File couldn't be opened.");
+            System.exit(1);
+        }
+
+        Lexer lexer = new Lexer(sourceFile);
+        List<Token> tokens = lexer.tokenize();
+
+        // Pass `tokens` to class `Parser` constructor and method should return AST tree. (But I think with no packages to shortcut)
+    }
+
+    private static String readFile(String path) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(path)));
     }
 }
