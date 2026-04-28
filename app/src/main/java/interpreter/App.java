@@ -19,19 +19,22 @@ public class App {
     }
 
     public static void main(String[] args) {
+        String filePath;
+
         if (args.length == 0) {
-            logger.info("Missing source file argument.");
-            System.exit(1);
+            filePath = "src/main/java/lexors/program.lexor"; // default
+            //System.out.println("No args provided. Using default: " + filePath);
+        } else {
+            filePath = args[0];
         }
-        
+
         String sourceFile = "";
 
-        try{
-            System.out.println(args[0]);
-            sourceFile = readFile(args[0]);
-
-        }catch (IOException e) {
-            logger.info("File couldn't be opened.");
+        try {
+            System.out.println("Reading: " + filePath);
+            sourceFile = readFile(filePath);
+        } catch (IOException e) {
+            logger.info("File couldn't be opened: " + filePath);
             System.exit(1);
         }
 
@@ -43,8 +46,14 @@ public class App {
         Parser parser = new Parser(tokens);
         ProgramNode ast = parser.parseProgram();
 
-        System.out.println("\n=== ABSTRACT SYNTAX TREE ===");
-        System.out.print(ast);
+//        System.out.println("\n=== EXECUTION OUTPUT ===");
+//        System.out.println("\n=== ABSTRACT SYNTAX TREE ===");
+//        System.out.print(ast);
+//        System.out.println("\n=== EXECUTION OUTPUT ===");
+
+        Interpreter interpreter = new Interpreter();
+
+        interpreter.execute(ast);
     }
 
     private static String readFile(String path) throws IOException {

@@ -1,7 +1,7 @@
 package nodes;
 
 public class PrintNode extends StatementNode{
-    ExpressionNode expression;
+    public ExpressionNode expression;
     public PrintNode(ExpressionNode expression){
         this.expression = expression;
     }
