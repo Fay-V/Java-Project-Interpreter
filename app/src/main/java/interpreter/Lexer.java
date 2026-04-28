@@ -1,4 +1,3 @@
-// Lexer.java
 package interpreter;
 
 import java.util.List;
@@ -6,73 +5,79 @@ import java.util.ArrayList;
 import java.util.Map;
 
 public class Lexer {
+
     private final String source;
     private int pos = 0;
     private int line = 1;
     private int lineStart = 0;
 
+    // ================= RESERVED WORDS =================
     private static final Map<String, TokenType> RESERVED_WORDS = Map.ofEntries(
-        // Keywords
-        Map.entry("START",   TokenType.KEYWORD),
-        Map.entry("END",     TokenType.KEYWORD),
-        Map.entry("SCRIPT",  TokenType.KEYWORD),
-        Map.entry("AREA",    TokenType.KEYWORD),
-        Map.entry("DECLARE", TokenType.KEYWORD),
-        Map.entry("PRINT",   TokenType.KEYWORD),
+            Map.entry("START", TokenType.KEYWORD),
+            Map.entry("END", TokenType.KEYWORD),
+            Map.entry("SCRIPT", TokenType.KEYWORD),
+            Map.entry("AREA", TokenType.KEYWORD),
+            Map.entry("DECLARE", TokenType.KEYWORD),
+            Map.entry("PRINT", TokenType.KEYWORD),
 
-        // Types
-        Map.entry("STRING",  TokenType.TYPE),
-        Map.entry("INT",     TokenType.TYPE),
-        Map.entry("CHAR",    TokenType.TYPE),
-        Map.entry("BOOL",    TokenType.TYPE),
-        Map.entry("FLOAT",   TokenType.TYPE),
+            Map.entry("STRING", TokenType.TYPE),
+            Map.entry("INT", TokenType.TYPE),
+            Map.entry("CHAR", TokenType.TYPE),
+            Map.entry("BOOL", TokenType.TYPE),
+            Map.entry("FLOAT", TokenType.TYPE),
 
-        // Bool literals
-        Map.entry("TRUE",    TokenType.BOOL_LITERAL),
-        Map.entry("FALSE",   TokenType.BOOL_LITERAL)
-        
+            Map.entry("TRUE", TokenType.BOOL_LITERAL),
+            Map.entry("FALSE", TokenType.BOOL_LITERAL)
     );
 
+    // ================= SYMBOLS =================
     private static final Map<String, TokenType> SYMBOLS = Map.ofEntries(
-            // Operators
+
             Map.entry(":=", TokenType.OPERATOR),
-            Map.entry("=",  TokenType.OPERATOR),
-            Map.entry("&",  TokenType.OPERATOR),
-            Map.entry("$",  TokenType.OPERATOR),
+            Map.entry("=", TokenType.OPERATOR),
+            Map.entry("&", TokenType.OPERATOR),
+            Map.entry("$", TokenType.OPERATOR),
 
-            // Arithmetic operators (ADD THESE)
-            Map.entry("+",  TokenType.OPERATOR),
-            Map.entry("-",  TokenType.OPERATOR),
-            Map.entry("*",  TokenType.OPERATOR),
-            Map.entry("/",  TokenType.OPERATOR),
-            Map.entry("%",  TokenType.OPERATOR),
+            Map.entry("+", TokenType.OPERATOR),
+            Map.entry("-", TokenType.OPERATOR),
+            Map.entry("*", TokenType.OPERATOR),
+            Map.entry("/", TokenType.OPERATOR),
+            Map.entry("%", TokenType.OPERATOR),
 
-            // Comparison operators (ADD THESE)
-            Map.entry(">",  TokenType.OPERATOR),
-            Map.entry("<",  TokenType.OPERATOR),
+            Map.entry(">", TokenType.OPERATOR),
+            Map.entry("<", TokenType.OPERATOR),
             Map.entry(">=", TokenType.OPERATOR),
             Map.entry("<=", TokenType.OPERATOR),
             Map.entry("==", TokenType.OPERATOR),
             Map.entry("<>", TokenType.OPERATOR),
 
-            // Punctuation (ADD THESE)
-            Map.entry(":",  TokenType.PUNCTUATION),
-            Map.entry(";",  TokenType.PUNCTUATION),
-            Map.entry("(",  TokenType.PUNCTUATION),
-            Map.entry(")",  TokenType.PUNCTUATION),
-            Map.entry("[",  TokenType.PUNCTUATION),
-            Map.entry("]",  TokenType.PUNCTUATION),
-            Map.entry("#",  TokenType.PUNCTUATION),
-            Map.entry(",",  TokenType.PUNCTUATION),
+            Map.entry(":", TokenType.PUNCTUATION),
+            Map.entry(";", TokenType.PUNCTUATION),
+            Map.entry("(", TokenType.PUNCTUATION),
+            Map.entry(")", TokenType.PUNCTUATION),
+            Map.entry("[", TokenType.PUNCTUATION),
+            Map.entry("]", TokenType.PUNCTUATION),
+            Map.entry("#", TokenType.PUNCTUATION),
+            Map.entry(",", TokenType.PUNCTUATION),
 
-            // Comment marker
             Map.entry("%%", TokenType.COMMENT)
     );
 
+    // ================= CONSTRUCTOR =================
     public Lexer(String source) {
-        this.source = source;
+        this.source = normalizeQuotes(source);
     }
 
+    // ================= NORMALIZE SMART QUOTES =================
+    private String normalizeQuotes(String input) {
+        return input
+                .replace('“', '"')
+                .replace('”', '"')
+                .replace('‘', '\'')
+                .replace('’', '\'');
+    }
+
+    // ================= TOKENIZE =================
     public List<Token> tokenize() {
         List<Token> tokens = new ArrayList<>();
 
@@ -82,15 +87,28 @@ public class Lexer {
 
             char c = source.charAt(pos);
 
+            // STRING
             if (c == '"') {
                 tokens.add(readStringLiteral());
-            } else if (c == '\'') {
+            }
+
+            // CHAR
+            else if (c == '\'') {
                 tokens.add(readCharLiteral());
-            } else if (Character.isLetter(c)) {
+            }
+
+            // IDENTIFIER / KEYWORD
+            else if (Character.isLetter(c) || c == '_') {
                 tokens.add(readWord());
-            } else if (Character.isDigit(c)) {
+            }
+
+            // NUMBER
+            else if (Character.isDigit(c)) {
                 tokens.add(readNumber());
-            } else {
+            }
+
+            // SYMBOL
+            else {
                 tokens.add(readSymbol());
             }
         }
@@ -99,23 +117,20 @@ public class Lexer {
         return tokens;
     }
 
-    // --- Readers ---
-
+    // ================= IDENTIFIER =================
     private Token readWord() {
         int col = column();
         StringBuilder sb = new StringBuilder();
 
-        // FIRST CHARACTER: letter OR underscore
-        if (pos < source.length() &&
-                (Character.isLetter(source.charAt(pos)) || source.charAt(pos) == '_')) {
+        char first = source.charAt(pos);
 
-            sb.append(source.charAt(pos));
-            pos++;
-        } else {
-            throw new RuntimeException("Invalid identifier start: " + source.charAt(pos));
+        if (!(Character.isLetter(first) || first == '_')) {
+            throw new RuntimeException("Invalid identifier start: " + first);
         }
 
-        // REST: letter, digit, underscore
+        sb.append(first);
+        pos++;
+
         while (pos < source.length()) {
             char c = source.charAt(pos);
 
@@ -128,12 +143,12 @@ public class Lexer {
         }
 
         String word = sb.toString();
-
-        // look up the word in the reserved map, default to IDENTIFIER if not found
         TokenType type = RESERVED_WORDS.getOrDefault(word, TokenType.IDENTIFIER);
+
         return new Token(type, word, line, col);
     }
 
+    // ================= NUMBER =================
     private Token readNumber() {
         int col = column();
         StringBuilder sb = new StringBuilder();
@@ -141,6 +156,7 @@ public class Lexer {
 
         while (pos < source.length()) {
             char c = source.charAt(pos);
+
             if (Character.isDigit(c)) {
                 sb.append(c);
                 pos++;
@@ -157,9 +173,11 @@ public class Lexer {
         return new Token(type, sb.toString(), line, col);
     }
 
+    // ================= STRING =================
     private Token readStringLiteral() {
         int col = column();
         StringBuilder sb = new StringBuilder();
+
         pos++; // skip opening "
 
         while (pos < source.length() && source.charAt(pos) != '"') {
@@ -167,38 +185,54 @@ public class Lexer {
             pos++;
         }
 
+        if (pos >= source.length()) {
+            throw new RuntimeException("Unterminated string at line " + line);
+        }
+
         pos++; // skip closing "
         return new Token(TokenType.STRING_LITERAL, sb.toString(), line, col);
     }
 
-
+    // ================= CHAR =================
     private Token readCharLiteral() {
         int col = column();
+
         pos++; // skip opening '
+
+        if (pos >= source.length()) {
+            throw new RuntimeException("Unterminated char at line " + line);
+        }
+
         char value = source.charAt(pos);
-        pos++; // skip the char
+        pos++;
+
+        if (pos >= source.length() || source.charAt(pos) != '\'') {
+            throw new RuntimeException("Unterminated char at line " + line);
+        }
+
         pos++; // skip closing '
+
         return new Token(TokenType.CHAR_LITERAL, String.valueOf(value), line, col);
     }
 
+    // ================= SYMBOLS =================
     private Token readSymbol() {
         int col = column();
 
+        if (pos + 1 < source.length()) {
+            String two = source.substring(pos, pos + 2);
 
-        // check two-character symbols first
-        String two = source.substring(pos, Math.min(pos + 2, source.length()));
-        if (SYMBOLS.containsKey(two)) {
-            pos += 2;
+            if (SYMBOLS.containsKey(two)) {
+                pos += 2;
 
-            // %% means the rest of the line is a comment, hand off to readComment
-            if (two.equals("%%")) {
-                return readComment(col);
+                if (two.equals("%%")) {
+                    return readComment(col);
+                }
+
+                return new Token(SYMBOLS.get(two), two, line, col);
             }
-
-            return new Token(SYMBOLS.get(two), two, line, col);
         }
 
-        // fallback to single character
         String one = String.valueOf(source.charAt(pos));
         pos++;
 
@@ -206,7 +240,7 @@ public class Lexer {
         return new Token(type, one, line, col);
     }
 
-// col is passed in from readSymbol so the token reports %% position, not the text after it
+    // ================= COMMENT =================
     private Token readComment(int col) {
         StringBuilder sb = new StringBuilder();
 
@@ -218,11 +252,11 @@ public class Lexer {
         return new Token(TokenType.COMMENT, sb.toString().trim(), line, col);
     }
 
-    // --- Helpers ---
-
+    // ================= WHITESPACE =================
     private void skipWhitespace() {
         while (pos < source.length()) {
             char c = source.charAt(pos);
+
             if (c == '\n') {
                 line++;
                 lineStart = pos + 1;
@@ -235,6 +269,7 @@ public class Lexer {
         }
     }
 
+    // ================= COLUMN =================
     private int column() {
         return pos - lineStart + 1;
     }

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProgramNode extends ASTNode{
-    List<StatementNode> statements;
+    public List<StatementNode> statements;
     public ProgramNode(){
         this.statements = new ArrayList<>();
     }
