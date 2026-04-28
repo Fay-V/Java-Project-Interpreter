@@ -1,4 +1,4 @@
-package java.project.interpreter;
+package interpreter;
 
 public enum TokenType {
     KEYWORD,
@@ -8,6 +8,7 @@ public enum TokenType {
     INT_LITERAL,
     CHAR_LITERAL,
     BOOL_LITERAL,
+    FLOAT_LITERAL,
     OPERATOR,
     PUNCTUATION,
     COMMENT,

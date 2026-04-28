@@ -1,5 +1,5 @@
 // Lexer.java
-package java.project.interpreter;
+package interpreter;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ public class Lexer {
         Map.entry("INT",     TokenType.TYPE),
         Map.entry("CHAR",    TokenType.TYPE),
         Map.entry("BOOL",    TokenType.TYPE),
+        Map.entry("FLOAT",   TokenType.TYPE),
 
         // Bool literals
         Map.entry("TRUE",    TokenType.BOOL_LITERAL),
@@ -33,19 +34,39 @@ public class Lexer {
     );
 
     private static final Map<String, TokenType> SYMBOLS = Map.ofEntries(
-        // Operators
-        Map.entry(":=", TokenType.OPERATOR),
-        Map.entry("=",  TokenType.OPERATOR),
-        Map.entry("&",  TokenType.OPERATOR),
+            // Operators
+            Map.entry(":=", TokenType.OPERATOR),
+            Map.entry("=",  TokenType.OPERATOR),
+            Map.entry("&",  TokenType.OPERATOR),
+            Map.entry("$",  TokenType.OPERATOR),
 
-        // Punctuation
-        Map.entry(":",  TokenType.PUNCTUATION),
-        Map.entry(";",  TokenType.PUNCTUATION),
-        Map.entry("(",  TokenType.PUNCTUATION),
-        Map.entry(")",  TokenType.PUNCTUATION),
+            // Arithmetic operators (ADD THESE)
+            Map.entry("+",  TokenType.OPERATOR),
+            Map.entry("-",  TokenType.OPERATOR),
+            Map.entry("*",  TokenType.OPERATOR),
+            Map.entry("/",  TokenType.OPERATOR),
+            Map.entry("%",  TokenType.OPERATOR),
 
-        // Comment marker
-        Map.entry("%%", TokenType.COMMENT)
+            // Comparison operators (ADD THESE)
+            Map.entry(">",  TokenType.OPERATOR),
+            Map.entry("<",  TokenType.OPERATOR),
+            Map.entry(">=", TokenType.OPERATOR),
+            Map.entry("<=", TokenType.OPERATOR),
+            Map.entry("==", TokenType.OPERATOR),
+            Map.entry("<>", TokenType.OPERATOR),
+
+            // Punctuation (ADD THESE)
+            Map.entry(":",  TokenType.PUNCTUATION),
+            Map.entry(";",  TokenType.PUNCTUATION),
+            Map.entry("(",  TokenType.PUNCTUATION),
+            Map.entry(")",  TokenType.PUNCTUATION),
+            Map.entry("[",  TokenType.PUNCTUATION),
+            Map.entry("]",  TokenType.PUNCTUATION),
+            Map.entry("#",  TokenType.PUNCTUATION),
+            Map.entry(",",  TokenType.PUNCTUATION),
+
+            // Comment marker
+            Map.entry("%%", TokenType.COMMENT)
     );
 
     public Lexer(String source) {
@@ -84,9 +105,26 @@ public class Lexer {
         int col = column();
         StringBuilder sb = new StringBuilder();
 
-        while (pos < source.length() && Character.isLetterOrDigit(source.charAt(pos))) {
+        // FIRST CHARACTER: letter OR underscore
+        if (pos < source.length() &&
+                (Character.isLetter(source.charAt(pos)) || source.charAt(pos) == '_')) {
+
             sb.append(source.charAt(pos));
             pos++;
+        } else {
+            throw new RuntimeException("Invalid identifier start: " + source.charAt(pos));
+        }
+
+        // REST: letter, digit, underscore
+        while (pos < source.length()) {
+            char c = source.charAt(pos);
+
+            if (Character.isLetterOrDigit(c) || c == '_') {
+                sb.append(c);
+                pos++;
+            } else {
+                break;
+            }
         }
 
         String word = sb.toString();
@@ -99,13 +137,24 @@ public class Lexer {
     private Token readNumber() {
         int col = column();
         StringBuilder sb = new StringBuilder();
+        boolean hasDecimal = false;
 
-        while (pos < source.length() && Character.isDigit(source.charAt(pos))) {
-            sb.append(source.charAt(pos));
-            pos++;
+        while (pos < source.length()) {
+            char c = source.charAt(pos);
+            if (Character.isDigit(c)) {
+                sb.append(c);
+                pos++;
+            } else if (c == '.' && !hasDecimal) {
+                hasDecimal = true;
+                sb.append(c);
+                pos++;
+            } else {
+                break;
+            }
         }
 
-        return new Token(TokenType.INT_LITERAL, sb.toString(), line, col);
+        TokenType type = hasDecimal ? TokenType.FLOAT_LITERAL : TokenType.INT_LITERAL;
+        return new Token(type, sb.toString(), line, col);
     }
 
     private Token readStringLiteral() {
@@ -122,7 +171,7 @@ public class Lexer {
         return new Token(TokenType.STRING_LITERAL, sb.toString(), line, col);
     }
 
-    
+
     private Token readCharLiteral() {
         int col = column();
         pos++; // skip opening '
@@ -134,6 +183,7 @@ public class Lexer {
 
     private Token readSymbol() {
         int col = column();
+
 
         // check two-character symbols first
         String two = source.substring(pos, Math.min(pos + 2, source.length()));
