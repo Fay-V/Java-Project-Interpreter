@@ -1,16 +1,26 @@
 package interpreter;
 
 public enum TokenType {
-    KEYWORD,
-    TYPE,
-    IDENTIFIER,
-    STRING_LITERAL,
-    INT_LITERAL,
-    CHAR_LITERAL,
-    BOOL_LITERAL,
-    FLOAT_LITERAL,
-    OPERATOR,
-    PUNCTUATION,
-    COMMENT,
-    EOF
+    // Structure
+    SCRIPT_AREA, START_SCRIPT, END_SCRIPT,
+    START_IF, END_IF, START_FOR, END_FOR, START_REPEAT, END_REPEAT,
+
+    // Keywords
+    DECLARE, INT, CHAR, BOOL, FLOAT,
+    PRINT_COLON, SCAN_COLON,
+    IF, ELSE, FOR, REPEAT, WHEN,
+    AND, OR, NOT,
+    TRUE, FALSE, NIL,
+
+    // Operators and punctuation
+    AMPERSAND, PLUS, MINUS, STAR, SLASH, PERCENT,
+    GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
+    EQUAL_EQUAL, NOT_EQUAL,
+    EQUAL, BANG,
+    LEFT_PAREN, RIGHT_PAREN, COMMA, SEMICOLON,
+    DOLLAR, ESCAPE,      // $ and [x] escape sequences
+
+    // Other
+    NEWLINE, EOF,
+    IDENTIFIER, NUMBER, STRING, CHAR_LITERAL
 }

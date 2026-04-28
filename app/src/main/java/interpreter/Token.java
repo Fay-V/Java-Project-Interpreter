@@ -1,21 +1,20 @@
 package interpreter;
 
-
 public class Token {
-    public final TokenType type;
-    public final String value;
-    public final int line;
-    public final int column;
+    final TokenType type;
+    final String lexeme;
+    final Object literal;
+    final int line;
 
-    public Token(TokenType type, String value, int line, int column) {
+    Token(TokenType type, String lexeme, Object literal, int line) {
         this.type = type;
-        this.value = value;
+        this.lexeme = lexeme;
+        this.literal = literal;
         this.line = line;
-        this.column = column;
     }
 
     @Override
     public String toString() {
-        return "[" + type + " : " + value + " | line: " + line + " column:" + column + "]";
+        return type + " " + lexeme + " " + literal;
     }
 }

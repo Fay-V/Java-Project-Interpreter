@@ -1,230 +1,345 @@
 package interpreter;
 
-import nodes.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import static interpreter.TokenType.*;
+
 public class Parser {
-    List<Token> tokens;
-    int current = 0;
-    public Parser(List<Token> tokens){
+    private final List<Token> tokens;
+    private int current = 0;
+
+    Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
 
-    public ProgramNode parseProgram() {
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        skipNewlines();
+        consume(SCRIPT_AREA, "Expect 'SCRIPT AREA'.");
+        skipNewlines();
+        consume(START_SCRIPT, "Expect 'START SCRIPT'.");
+        skipNewlines();
 
-        // 1. Expect SCRIPT AREA START SCRIPT
-        expect(TokenType.KEYWORD, "SCRIPT");
-        expect(TokenType.KEYWORD, "AREA");
-        expect(TokenType.KEYWORD, "START");
-        expect(TokenType.KEYWORD, "SCRIPT");
-
-        // 2. Create program node
-        ProgramNode program = new ProgramNode();
-
-        // 3. Parse statements until END SCRIPT
-        while (!check(TokenType.KEYWORD, "END")) {
-            program.addStatement(parseStatement());
+        // Declarations (only at top level)
+        while (match(DECLARE)) {
+            statements.add(declaration());
+            consume(NEWLINE, "Expect newline after declaration.");
+            skipNewlines();
         }
 
-        // 4. Consume END SCRIPT
-        expect(TokenType.KEYWORD, "END");
-        expect(TokenType.KEYWORD, "SCRIPT");
-        expect(TokenType.EOF);
+        // Executable statements
+        while (!check(END_SCRIPT) && !isAtEnd()) {
+            statements.add(statement());
+            match(NEWLINE);   // replace consume with match
+            skipNewlines();
+        }
 
-        return program;
+        consume(END_SCRIPT, "Expect 'END SCRIPT'.");
+        // skipNewlines();
+        // consume(EOF, "Expect end of file.");
+        return statements;
     }
 
-    public StatementNode parseStatement(){
-        Token token = peek();
-
-        if(token.value.equals("DECLARE")){
-            return parseDeclaration();
-        } else if(token.value.equals("PRINT")){
-            return parsePrint();
-        } else if(token.type == TokenType.IDENTIFIER){
-            return parseAssignment();
-        }
-
-        throw new RuntimeException("Invalid statement at line " + token.line);
+    private Stmt declaration() {
+        Token type = consumeAnyOf("Expect data type.", INT, CHAR, BOOL, FLOAT);
+        List<Token> names = new ArrayList<>();
+        List<Expr> initializers = new ArrayList<>();
+        do {
+            Token name = consume(IDENTIFIER, "Expect variable name.");
+            Expr initializer = null;
+            if (match(EQUAL)) {
+                initializer = expression();
+            }
+            names.add(name);
+            initializers.add(initializer);
+        } while (match(COMMA));
+        return new Stmt.Declaration(type, names, initializers);
     }
 
-    public DeclarationNode parseDeclaration(){
-        expect(TokenType.KEYWORD, "DECLARE");
-
-        Token typeToken = peek();
-        expect(TokenType.TYPE);
-
-        String type = typeToken.value;
-        List<VariableNode> variables = new ArrayList<>();
-
-        // at least one variable
-        variables.add(parseVariableNode());
-
-        // handle commas
-        while (check(TokenType.PUNCTUATION, ",")) {
-            expect(TokenType.PUNCTUATION, ",");
-            variables.add(parseVariableNode());
-        }
-
-        return new DeclarationNode(type, variables);
+    private Stmt statement() {
+        if (match(PRINT_COLON)) return printStatement();
+        if (match(SCAN_COLON)) return scanStatement();
+        if (match(IF)) return ifStatement();
+        if (match(FOR)) return forStatement();
+        if (match(REPEAT)) return repeatStatement();
+        return expressionStatement();
     }
 
-    public VariableNode parseVariableNode(){
-        Token token = peek();
-        expect(TokenType.IDENTIFIER);
-
-        ExpressionNode expression = null;
-
-        if (check(TokenType.OPERATOR, "=")) {
-            expect(TokenType.OPERATOR, "=");
-            expression = parseAssignmentExpression();
-        }
-
-        return new VariableNode(token.value, expression);
+    private Stmt printStatement() {
+        Expr expr = expression();
+        return new Stmt.Print(expr);
     }
 
-    public AssignmentNode parseAssignment() {
-
-        Token identifier = peek();
-        expect(TokenType.IDENTIFIER);
-
-        expect(TokenType.OPERATOR, "=");
-
-        ExpressionNode value = parseAssignmentExpression();
-
-        return new AssignmentNode(identifier.value, value);
+    private Stmt scanStatement() {
+        List<Token> variables = new ArrayList<>();
+        do {
+            variables.add(consume(IDENTIFIER, "Expect variable name."));
+        } while (match(COMMA));
+        return new Stmt.Scan(variables);
     }
 
-    public ExpressionNode parseAssignmentExpression() {
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN, "Expect '(' after IF.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        skipNewlines();
+        consume(START_IF, "Expect 'START IF'.");
+        consumeNewlineOrSkip("Expect newline after START IF.");
 
-        ExpressionNode left = parseExpression();
+        Stmt thenBranch = block(END_IF);
+        while (match(NEWLINE)) {}   // consume all newlines
 
-        // handle chaining: y = 4
-        if (check(TokenType.OPERATOR, "=")) {
-            expect(TokenType.OPERATOR, "=");
-
-            ExpressionNode right = parseAssignmentExpression();
-
-            return new AssignmentExpressionNode(
-                    ((IdentifierNode) left).name,
-                    right
-            );
+        List<Stmt.If.ElseIf> elseIfs = new ArrayList<>();
+        while (match(ELSE)) {
+            while (match(NEWLINE)) {}   // consume any newlines after ELSE
+            if (check(IF)) {
+                consume(IF, "Expect 'IF' after ELSE.");
+                consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
+                Expr elifCondition = expression();
+                consume(RIGHT_PAREN, "Expect ')' after condition.");
+                skipNewlines();
+                consume(START_IF, "Expect 'START IF'.");
+                consumeNewlineOrSkip("Expect newline after START IF.");
+                Stmt elifBranch = block(END_IF);
+                while (match(NEWLINE)) {}   // consume newlines after block
+                elseIfs.add(new Stmt.If.ElseIf(elifCondition, elifBranch));
+            } else {
+                consume(START_IF, "Expect 'START IF' for ELSE.");
+                consumeNewlineOrSkip("Expect newline after START IF.");
+                Stmt elseBranch = block(END_IF);
+                while (match(NEWLINE)) {}   // consume newlines after block
+                return new Stmt.If(condition, thenBranch, elseIfs, elseBranch);
+            }
         }
-
-        return left;
+        return new Stmt.If(condition, thenBranch, elseIfs, null);
     }
 
-    public PrintNode parsePrint() {
-        expect(TokenType.KEYWORD, "PRINT");
-        expect(TokenType.PUNCTUATION, ":");
-
-        ExpressionNode expression = parseExpression();
-
-        return new PrintNode(expression);
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after FOR.");
+        Expr initializer = null;
+        if (!check(COMMA)) {
+            initializer = expression();
+        }
+        consume(COMMA, "Expect ',' after initializer.");
+        Expr condition = null;
+        if (!check(COMMA)) {
+            condition = expression();
+        }
+        consume(COMMA, "Expect ',' after condition.");
+        Expr increment = null;
+        if (!check(RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ')' after FOR clauses.");
+        skipNewlines();
+        consume(START_FOR, "Expect 'START FOR'.");
+        consumeNewlineOrSkip("Expect newline after START FOR.");
+        Stmt body = block(END_FOR);
+        return new Stmt.For(initializer, condition, increment, body);
     }
 
-    public ExpressionNode parseExpression(){
-        ExpressionNode left = parsePrimary();
-
-        while (check(TokenType.OPERATOR, "&")) {
-
-            String op = peek().value;
-            expect(TokenType.OPERATOR, "&");
-
-            ExpressionNode right = parsePrimary();
-
-            left = new BinaryExpressionNode(left, op, right);
-        }
-
-        return left;
+    private Stmt repeatStatement() {
+        // REPEAT already matched
+        consume(WHEN, "Expect 'WHEN' after REPEAT.");
+        consume(LEFT_PAREN, "Expect '(' after WHEN.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        skipNewlines();
+        consume(START_REPEAT, "Expect 'START REPEAT'.");
+        consumeNewlineOrSkip("Expect newline after START REPEAT.");
+        Stmt body = block(END_REPEAT);
+        return new Stmt.Repeat(condition, body);
     }
 
-    public ExpressionNode parsePrimary() {
-
-        Token token = peek();
-
-        // identifier
-        if (token.type == TokenType.IDENTIFIER) {
-            expect(TokenType.IDENTIFIER);
-            return new IdentifierNode(token.value);
+    private Stmt block(TokenType endType) {
+        List<Stmt> statements = new ArrayList<>();
+        while (!check(endType) && !isAtEnd()) {
+            statements.add(statement());
+            consume(NEWLINE, "Expect newline after statement.");
+            skipNewlines();
         }
-
-        // literal
-        if (token.type == TokenType.INT_LITERAL ||
-                token.type == TokenType.STRING_LITERAL ||
-                token.type == TokenType.CHAR_LITERAL ||
-                token.type == TokenType.BOOL_LITERAL) {
-
-            expect(token.type);
-            return new LiteralNode(token.value);
-        }
-
-        if (token.type == TokenType.OPERATOR && token.value.equals("$")) {
-            expect(TokenType.OPERATOR, "$");
-            return new LiteralNode("\n"); // $ = newline (spec: carriage return)
-        }
-
-        if (check(TokenType.PUNCTUATION, "[")) {
-            expect(TokenType.PUNCTUATION, "[");
-            expect(TokenType.PUNCTUATION, "#");
-            expect(TokenType.PUNCTUATION, "]");
-            return new LiteralNode("#");
-        }
-
-        throw new RuntimeException(
-                "Unexpected token " + token.value + " in expression at line " + token.line
-        );
+        consume(endType, "Expect '" + endType.name() + "'.");
+        return new Stmt.Block(statements);
     }
 
-    // ================= HELPERS =================
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        return new Stmt.Expression(expr);
+    }
 
-    private void skipComments() {
-        while (current < tokens.size() &&
-                tokens.get(current).type == TokenType.COMMENT) {
-            current++;
+    // ---------- Expressions ----------
+    private Expr expression() {
+        return assignment();
+    }
+
+    private Expr assignment() {
+        Expr expr = or();
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment(); // right-associative
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            }
+            throw error(equals, "Invalid assignment target.");
+        }
+        return expr;
+    }
+
+    private Expr or() {
+        Expr expr = and();
+        while (match(OR)) {
+            Token operator = previous();
+            Expr right = and();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr and() {
+        Expr expr = equality();
+        while (match(AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr equality() {
+        Expr expr = comparison();
+        while (match(EQUAL_EQUAL, NOT_EQUAL)) {
+            Token operator = previous();
+            Expr right = comparison();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr comparison() {
+        Expr expr = concatenation();
+        while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+            Token operator = previous();
+            Expr right = concatenation();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr concatenation() {
+        Expr expr = addition();
+        while (match(AMPERSAND)) {
+            Token operator = previous();
+            Expr right = addition();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr addition() {
+        Expr expr = multiplication();
+        while (match(PLUS, MINUS)) {
+            Token operator = previous();
+            Expr right = multiplication();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr multiplication() {
+        Expr expr = unary();
+        while (match(STAR, SLASH, PERCENT)) {
+            Token operator = previous();
+            Expr right = unary();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr unary() {
+        if (match(NOT, MINUS)) {
+            Token operator = previous();
+            Expr right = unary();
+            return new Expr.Unary(operator, right);
+        }
+        return primary();
+    }
+
+    private Expr primary() {
+        if (match(NIL)) return new Expr.Literal(previous().literal);
+        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expr.Literal(previous().literal);
+        if (match(DOLLAR, ESCAPE)) return new Expr.Literal(previous().literal);
+        if (match(IDENTIFIER)) return new Expr.Variable(previous());
+        if (match(LEFT_PAREN)) {
+            Expr expr = expression();
+            consume(RIGHT_PAREN, "Expect ')' after expression.");
+            return new Expr.Grouping(expr);
+        }
+        throw error(peek(), "Expect expression.");
+    }
+
+    // ---------- Helpers ----------
+    private Token consume(TokenType type, String message) {
+        if (check(type)) return advance();
+        throw error(peek(), message);
+    }
+
+    private Token consumeAnyOf(String message, TokenType... types) {
+        for (TokenType type : types) {
+            if (check(type)) return advance();
+        }
+        throw error(peek(), message);
+    }
+
+    private void consumeNewlineOrSkip(String message) {
+        if (check(NEWLINE)) {
+            advance();
+        } else {
+            throw error(peek(), message);
         }
     }
 
-    private void expect(TokenType type){
-        Token token = peek();
-
-        if(token.type != type){
-            throw new RuntimeException(
-                    "Syntax error at line " + token.line +
-                            ", column " + token.column +
-                            " expected type: " + type +
-                            " but found: " + token.type
-            );
-        }
-
-        current++;
-        skipComments();
+    private void skipNewlines() {
+        while (match(NEWLINE)) { }
     }
 
-    private void expect(TokenType type, String value){
-        Token token = peek();
-
-        if(token.type != type || !token.value.equals(value)){
-            throw new RuntimeException(
-                    "Syntax error at line " + token.line +
-                            ", column " + token.column +
-                            " expected: " + value +
-                            " but found: " + token.value
-            );
+    private boolean match(TokenType... types) {
+        for (TokenType type : types) {
+            if (check(type)) {
+                advance();
+                return true;
+            }
         }
-        current++;
-        skipComments();
+        return false;
+    }
+
+    private boolean check(TokenType type) {
+        if (isAtEnd()) return false;
+        return peek().type == type;
+    }
+
+    private Token advance() {
+        if (!isAtEnd()) current++;
+        return previous();
+    }
+
+    private boolean isAtEnd() {
+        return peek().type == EOF;
     }
 
     private Token peek() {
-        skipComments();
         return tokens.get(current);
     }
 
-    private boolean check(TokenType type, String value){
-        Token token = peek();
-        return token != null && token.type == type && token.value.equals(value);
+    private Token previous() {
+        return tokens.get(current - 1);
     }
+
+    private ParseError error(Token token, String message) {
+        App.error(token, message);
+        return new ParseError();
+    }
+
+    private static class ParseError extends RuntimeException {}
 }

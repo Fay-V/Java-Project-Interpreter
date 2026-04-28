@@ -1,0 +1,12 @@
+%% Expected output:
+%% 1
+%% 2
+%% 3
+SCRIPT AREA
+START SCRIPT
+DECLARE INT i=1
+FOR (i=1, i <= 3, i = i + 1)
+START FOR
+PRINT: i
+END FOR
+END SCRIPT

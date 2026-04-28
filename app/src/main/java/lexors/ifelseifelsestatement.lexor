@@ -1,0 +1,17 @@
+%% Expected output: medium
+SCRIPT AREA
+START SCRIPT
+DECLARE INT score=75
+IF (score >= 90)
+START IF
+PRINT: "high"
+END IF
+ELSE IF (score >= 60)
+START IF
+PRINT: "medium"
+END IF
+ELSE
+START IF
+PRINT: "low"
+END IF
+END SCRIPT
