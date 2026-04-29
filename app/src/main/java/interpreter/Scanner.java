@@ -30,9 +30,8 @@ public class Scanner {
         keywords.put("AND", AND);
         keywords.put("OR", OR);
         keywords.put("NOT", NOT);
-        //keywords.put("TRUE", TRUE);
-        //keywords.put("FALSE", FALSE);
         keywords.put("NIL", NIL);
+        // TRUE and FALSE are not keywords; they are string literals "TRUE"/"FALSE"
     }
 
     Scanner(String source) {
@@ -86,10 +85,12 @@ public class Scanner {
             case '>':
                 addToken(match('=') ? GREATER_EQUAL : GREATER);
                 break;
-            case '\'':
+            // Single quotes (straight and smart/curly)
+            case '\'': case '\u2018': case '\u2019':  // ' ' '
                 charLiteral();
                 break;
-            case '"':
+            // Double quotes (straight and smart/curly)
+            case '"': case '\u201C': case '\u201D':   // " " "
                 string();
                 break;
             case '[':
@@ -123,12 +124,12 @@ public class Scanner {
     }
 
     private void charLiteral() {
-        if (isAtEnd() || peek() == '\'') {
+        if (isAtEnd() || isSingleQuote(peek())) {
             App.error(line, "Empty char literal.");
             return;
         }
         char ch = advance();
-        if (peek() != '\'') {
+        if (!isSingleQuote(peek())) {
             App.error(line, "Unterminated char literal.");
         } else {
             advance();
@@ -136,9 +137,13 @@ public class Scanner {
         addToken(CHAR_LITERAL, ch);
     }
 
+    private boolean isSingleQuote(char c) {
+        return c == '\'' || c == '\u2018' || c == '\u2019';
+    }
+
     private void string() {
         StringBuilder sb = new StringBuilder();
-        while (peek() != '"' && !isAtEnd()) {
+        while (!isDoubleQuote(peek()) && !isAtEnd()) {
             if (peek() == '\n') line++;
             if (peek() == '$') {
                 advance();
@@ -180,8 +185,12 @@ public class Scanner {
             App.error(line, "Unterminated string.");
             return;
         }
-        advance(); // closing "
+        advance(); // closing quote
         addToken(STRING, sb.toString());
+    }
+
+    private boolean isDoubleQuote(char c) {
+        return c == '"' || c == '\u201C' || c == '\u201D';
     }
 
     private void escapeSequence() {
@@ -218,14 +227,14 @@ public class Scanner {
         while (isAlphaNumeric(peek())) advance();
         String text = source.substring(start, current);
 
-        switch (text.toUpperCase()) {
+        switch (text) {
             case "SCRIPT": {
                 skipWhitespaceAndNewlines();
                 if (matchNextIdentifier("AREA")) {
                     addToken(SCRIPT_AREA);
                 } else {
                     App.error(line, "Expected 'AREA' after 'SCRIPT'.");
-                    addToken(SCRIPT_AREA); // error recovery
+                    addToken(SCRIPT_AREA);
                 }
                 return;
             }
@@ -283,7 +292,8 @@ public class Scanner {
             }
         }
 
-        TokenType type = keywords.get(text.toUpperCase());
+        // Single‑word keyword or identifier (case‑sensitive)
+        TokenType type = keywords.get(text);
         if (type != null) {
             addToken(type);
         } else {
@@ -314,7 +324,7 @@ public class Scanner {
             current++;
         }
         String found = source.substring(start, current);
-        if (found.equalsIgnoreCase(word)) {
+        if (found.equals(word)) {
             return true;
         } else {
             current = start;
