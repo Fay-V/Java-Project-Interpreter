@@ -1,0 +1,6 @@
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x = 1, y = 2, z=3
+DECLARE BOOL d="FALSE"
+PRINT: d & [[] & x & []] & y & z
+END SCRIPT

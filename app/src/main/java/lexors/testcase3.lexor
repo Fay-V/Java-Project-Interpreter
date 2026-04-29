@@ -1,0 +1,7 @@
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x, y
+DECLARE FLOAT y
+END SCRIPT
+
+%% Output: error, redeclaration.
