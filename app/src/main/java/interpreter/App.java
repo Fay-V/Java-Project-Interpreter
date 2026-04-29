@@ -40,8 +40,8 @@ public class App {
 
         Lexer lexer = new Lexer(sourceFile);
         List<Token> tokens = lexer.tokenize();
-        System.out.println(tokens);
-        System.out.println();
+//        System.out.println(tokens);
+//        System.out.println();
         // Pass `tokens` to class `Parser` constructor and method should return AST tree. (But I think with no packages to shortcut)
         Parser parser = new Parser(tokens);
         ProgramNode ast = parser.parseProgram();

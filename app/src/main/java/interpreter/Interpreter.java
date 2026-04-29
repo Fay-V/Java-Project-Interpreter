@@ -44,7 +44,7 @@ public class Interpreter {
 
         for (VariableNode var : decl.variables) {
 
-            String value = "0"; // default value (Increment 1 rule)
+            String value = getDefaultValue(decl.type);
 
             if (var.initializer != null) {
                 value = evaluate(var.initializer);
@@ -54,6 +54,16 @@ public class Interpreter {
         }
     }
 
+    private String getDefaultValue(String type) {
+        return switch (type) {
+            case "INT" -> "0";
+            case "FLOAT" -> "0.0";
+            case "CHAR" -> "";     // or "\0" if you want strict char
+            case "BOOL" -> "FALSE";
+            case "STRING" -> "";
+            default -> throw new RuntimeException("Unknown type: " + type);
+        };
+    }
     // ================= EXPRESSIONS (Increment 1 ONLY) =================
 
     private String evaluate(ExpressionNode expr) {
