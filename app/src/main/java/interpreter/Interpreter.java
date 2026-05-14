@@ -95,8 +95,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     if (input.length() == 1) return input.charAt(0);
                     throw new RuntimeError(errorToken, "CHAR must be a single character.");
                 case BOOL:
-                    if (input.equalsIgnoreCase("TRUE")) return true;
-                    if (input.equalsIgnoreCase("FALSE")) return false;
+                    if (input.equals("TRUE")) return true;
+                    if (input.equals("FALSE")) return false;
                     throw new RuntimeError(errorToken, "BOOl must be TRUE or FALSE.");
                 default: throw new RuntimeError(errorToken, "Unknown type.");
             }

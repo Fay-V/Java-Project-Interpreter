@@ -11,6 +11,9 @@ public class Environment {
     private final Set<String> initialized = new HashSet<>();
 
     void define(String name, DataType type, Object value) {
+        if (values.containsKey(name)) {
+            throw new RuntimeError(null, "Variable '" + name + "' is already declared.");
+        }
         values.put(name, value);
         types.put(name, type);
         if (value != null) {

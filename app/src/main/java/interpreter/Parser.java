@@ -36,8 +36,11 @@ public class Parser {
         }
 
         consume(END_SCRIPT, "Expect 'END SCRIPT'.");
-        // skipNewlines();
-        // consume(EOF, "Expect end of file.");
+        skipNewlines();
+        if(!isAtEnd()){
+            throw error(tokens.get(current), "Expected end of file");
+        }
+
         return statements;
     }
 
