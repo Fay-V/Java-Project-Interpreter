@@ -1,0 +1,9 @@
+%% Expected output: yes
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x=10
+IF (x > 5)
+START IF
+PRINT: "yes"
+END IF
+END SCRIPT

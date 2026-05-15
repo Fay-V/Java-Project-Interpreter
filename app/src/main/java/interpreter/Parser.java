@@ -1,11 +1,12 @@
 package interpreter;
 
+import static interpreter.TokenType.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import static interpreter.TokenType.*;
-
 public class Parser {
+
     private final List<Token> tokens;
     private int current = 0;
 
@@ -31,13 +32,13 @@ public class Parser {
         // Executable statements
         while (!check(END_SCRIPT) && !isAtEnd()) {
             statements.add(statement());
-            match(NEWLINE);   // replace consume with match
+            match(NEWLINE); // replace consume with match
             skipNewlines();
         }
 
         consume(END_SCRIPT, "Expect 'END SCRIPT'.");
         skipNewlines();
-        if(!isAtEnd()){
+        if (!isAtEnd()) {
             throw error(tokens.get(current), "Expected end of file");
         }
 
@@ -91,11 +92,11 @@ public class Parser {
         consumeNewlineOrSkip("Expect newline after START IF.");
 
         Stmt thenBranch = block(END_IF);
-        while (match(NEWLINE)) {}   // consume all newlines
+        while (match(NEWLINE)) {} // consume all newlines
 
         List<Stmt.If.ElseIf> elseIfs = new ArrayList<>();
         while (match(ELSE)) {
-            while (match(NEWLINE)) {}   // consume any newlines after ELSE
+            while (match(NEWLINE)) {} // consume any newlines after ELSE
             if (check(IF)) {
                 consume(IF, "Expect 'IF' after ELSE.");
                 consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
@@ -105,13 +106,13 @@ public class Parser {
                 consume(START_IF, "Expect 'START IF'.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Stmt elifBranch = block(END_IF);
-                while (match(NEWLINE)) {}   // consume newlines after block
+                while (match(NEWLINE)) {} // consume newlines after block
                 elseIfs.add(new Stmt.If.ElseIf(elifCondition, elifBranch));
             } else {
                 consume(START_IF, "Expect 'START IF' for ELSE.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Stmt elseBranch = block(END_IF);
-                while (match(NEWLINE)) {}   // consume newlines after block
+                while (match(NEWLINE)) {} // consume newlines after block
                 return new Stmt.If(condition, thenBranch, elseIfs, elseBranch);
             }
         }
@@ -271,7 +272,9 @@ public class Parser {
 
     private Expr primary() {
         if (match(NIL)) return new Expr.Literal(previous().literal);
-        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expr.Literal(previous().literal);
+        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expr.Literal(
+            previous().literal
+        );
         if (match(DOLLAR, ESCAPE)) return new Expr.Literal(previous().literal);
         if (match(IDENTIFIER)) return new Expr.Variable(previous());
         if (match(LEFT_PAREN)) {
@@ -284,6 +287,10 @@ public class Parser {
 
     // ---------- Helpers ----------
     private Token consume(TokenType type, String message) {
+        if (type == EOF) {
+            if (isAtEnd()) return advance();
+            throw error(peek(), message);
+        }
         if (check(type)) return advance();
         throw error(peek(), message);
     }
@@ -304,7 +311,7 @@ public class Parser {
     }
 
     private void skipNewlines() {
-        while (match(NEWLINE)) { }
+        while (match(NEWLINE)) {}
     }
 
     private boolean match(TokenType... types) {

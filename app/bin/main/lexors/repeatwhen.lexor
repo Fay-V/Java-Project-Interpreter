@@ -1,0 +1,13 @@
+%% Expected output:
+%% 1
+%% 2
+%% 3
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x=0
+REPEAT WHEN (x < 3)
+START REPEAT
+x = x + 1
+PRINT: x
+END REPEAT
+END SCRIPT

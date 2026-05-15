@@ -1,0 +1,13 @@
+%% Expected output: no
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x=3
+IF (x > 5)
+START IF
+PRINT: "yes"
+END IF
+ELSE
+START IF
+PRINT: "no"
+END IF
+END SCRIPT
