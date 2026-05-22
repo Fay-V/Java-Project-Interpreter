@@ -44,12 +44,12 @@ public class App {
     }
 
     private static void run(String source) {
-        Scanner scanner = new Scanner(source);
+        Lexer scanner = new Lexer(source);
         List<Token> tokens = scanner.scanTokens();
         if (hadError) return;
 
         Parser parser = new Parser(tokens);
-        List<Stmt> statements = parser.parse();
+        List<Statement> statements = parser.parse();
         if (hadError) return;
 
         interpreter.interpret(statements);

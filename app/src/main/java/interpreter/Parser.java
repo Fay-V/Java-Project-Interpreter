@@ -14,8 +14,8 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    List<Stmt> parse() {
-        List<Stmt> statements = new ArrayList<>();
+    List<Statement> parse() {
+        List<Statement> statements = new ArrayList<>();
         skipNewlines();
         consume(SCRIPT_AREA, "Expect 'SCRIPT AREA'.");
         skipNewlines();
@@ -45,23 +45,23 @@ public class Parser {
         return statements;
     }
 
-    private Stmt declaration() {
+    private Statement declaration() {
         Token type = consumeAnyOf("Expect data type.", INT, CHAR, BOOL, FLOAT);
         List<Token> names = new ArrayList<>();
-        List<Expr> initializers = new ArrayList<>();
+        List<Expression> initializers = new ArrayList<>();
         do {
             Token name = consume(IDENTIFIER, "Expect variable name.");
-            Expr initializer = null;
+            Expression initializer = null;
             if (match(EQUAL)) {
                 initializer = expression();
             }
             names.add(name);
             initializers.add(initializer);
         } while (match(COMMA));
-        return new Stmt.Declaration(type, names, initializers);
+        return new Statement.Declaration(type, names, initializers);
     }
 
-    private Stmt statement() {
+    private Statement statement() {
         if (match(PRINT_COLON)) return printStatement();
         if (match(SCAN_COLON)) return scanStatement();
         if (match(IF)) return ifStatement();
@@ -70,68 +70,68 @@ public class Parser {
         return expressionStatement();
     }
 
-    private Stmt printStatement() {
-        Expr expr = expression();
-        return new Stmt.Print(expr);
+    private Statement printStatement() {
+        Expression expr = expression();
+        return new Statement.Print(expr);
     }
 
-    private Stmt scanStatement() {
+    private Statement scanStatement() {
         List<Token> variables = new ArrayList<>();
         do {
             variables.add(consume(IDENTIFIER, "Expect variable name."));
         } while (match(COMMA));
-        return new Stmt.Scan(variables);
+        return new Statement.Scan(variables);
     }
 
-    private Stmt ifStatement() {
+    private Statement ifStatement() {
         consume(LEFT_PAREN, "Expect '(' after IF.");
-        Expr condition = expression();
+        Expression condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after condition.");
         skipNewlines();
         consume(START_IF, "Expect 'START IF'.");
         consumeNewlineOrSkip("Expect newline after START IF.");
 
-        Stmt thenBranch = block(END_IF);
-        while (match(NEWLINE)) {} // consume all newlines
+        Statement thenBranch = block(END_IF);
+        while (match(NEWLINE)) {}
 
-        List<Stmt.If.ElseIf> elseIfs = new ArrayList<>();
+        List<Statement.If.ElseIf> elseIfs = new ArrayList<>();
         while (match(ELSE)) {
-            while (match(NEWLINE)) {} // consume any newlines after ELSE
+            while (match(NEWLINE)) {}
             if (check(IF)) {
                 consume(IF, "Expect 'IF' after ELSE.");
                 consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
-                Expr elifCondition = expression();
+                Expression elifCondition = expression();
                 consume(RIGHT_PAREN, "Expect ')' after condition.");
                 skipNewlines();
                 consume(START_IF, "Expect 'START IF'.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
-                Stmt elifBranch = block(END_IF);
-                while (match(NEWLINE)) {} // consume newlines after block
-                elseIfs.add(new Stmt.If.ElseIf(elifCondition, elifBranch));
+                Statement elifBranch = block(END_IF);
+                while (match(NEWLINE)) {}
+                elseIfs.add(new Statement.If.ElseIf(elifCondition, elifBranch));
             } else {
                 consume(START_IF, "Expect 'START IF' for ELSE.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
-                Stmt elseBranch = block(END_IF);
-                while (match(NEWLINE)) {} // consume newlines after block
-                return new Stmt.If(condition, thenBranch, elseIfs, elseBranch);
+                Statement elseBranch = block(END_IF);
+                while (match(NEWLINE)) {}
+                return new Statement.If(condition, thenBranch, elseIfs, elseBranch);
             }
         }
-        return new Stmt.If(condition, thenBranch, elseIfs, null);
+        return new Statement.If(condition, thenBranch, elseIfs, null);
     }
 
-    private Stmt forStatement() {
+    private Statement forStatement() {
         consume(LEFT_PAREN, "Expect '(' after FOR.");
-        Expr initializer = null;
+        Expression initializer = null;
         if (!check(COMMA)) {
             initializer = expression();
         }
         consume(COMMA, "Expect ',' after initializer.");
-        Expr condition = null;
+        Expression condition = null;
         if (!check(COMMA)) {
             condition = expression();
         }
         consume(COMMA, "Expect ',' after condition.");
-        Expr increment = null;
+        Expression increment = null;
         if (!check(RIGHT_PAREN)) {
             increment = expression();
         }
@@ -139,148 +139,147 @@ public class Parser {
         skipNewlines();
         consume(START_FOR, "Expect 'START FOR'.");
         consumeNewlineOrSkip("Expect newline after START FOR.");
-        Stmt body = block(END_FOR);
-        return new Stmt.For(initializer, condition, increment, body);
+        Statement body = block(END_FOR);
+        return new Statement.For(initializer, condition, increment, body);
     }
 
-    private Stmt repeatStatement() {
-        // REPEAT already matched
+    private Statement repeatStatement() {
         consume(WHEN, "Expect 'WHEN' after REPEAT.");
         consume(LEFT_PAREN, "Expect '(' after WHEN.");
-        Expr condition = expression();
+        Expression condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after condition.");
         skipNewlines();
         consume(START_REPEAT, "Expect 'START REPEAT'.");
         consumeNewlineOrSkip("Expect newline after START REPEAT.");
-        Stmt body = block(END_REPEAT);
-        return new Stmt.Repeat(condition, body);
+        Statement body = block(END_REPEAT);
+        return new Statement.Repeat(condition, body);
     }
 
-    private Stmt block(TokenType endType) {
-        List<Stmt> statements = new ArrayList<>();
+    private Statement block(TokenType endType) {
+        List<Statement> statements = new ArrayList<>();
         while (!check(endType) && !isAtEnd()) {
             statements.add(statement());
             consume(NEWLINE, "Expect newline after statement.");
             skipNewlines();
         }
         consume(endType, "Expect '" + endType.name() + "'.");
-        return new Stmt.Block(statements);
+        return new Statement.Block(statements);
     }
 
-    private Stmt expressionStatement() {
-        Expr expr = expression();
-        return new Stmt.Expression(expr);
+    private Statement expressionStatement() {
+        Expression expr = expression();
+        return new Statement.Expression(expr);
     }
 
     // ---------- Expressions ----------
-    private Expr expression() {
+    private Expression expression() {
         return assignment();
     }
 
-    private Expr assignment() {
-        Expr expr = or();
+    private Expression assignment() {
+        Expression expr = or();
         if (match(EQUAL)) {
             Token equals = previous();
-            Expr value = assignment(); // right-associative
-            if (expr instanceof Expr.Variable) {
-                Token name = ((Expr.Variable) expr).name;
-                return new Expr.Assign(name, value);
+            Expression value = assignment(); // right-associative
+            if (expr instanceof Expression.Variable) {
+                Token name = ((Expression.Variable) expr).name;
+                return new Expression.Assign(name, value);
             }
             throw error(equals, "Invalid assignment target.");
         }
         return expr;
     }
 
-    private Expr or() {
-        Expr expr = and();
+    private Expression or() {
+        Expression expr = and();
         while (match(OR)) {
             Token operator = previous();
-            Expr right = and();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = and();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr and() {
-        Expr expr = equality();
+    private Expression and() {
+        Expression expr = equality();
         while (match(AND)) {
             Token operator = previous();
-            Expr right = equality();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = equality();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr equality() {
-        Expr expr = comparison();
+    private Expression equality() {
+        Expression expr = comparison();
         while (match(EQUAL_EQUAL, NOT_EQUAL)) {
             Token operator = previous();
-            Expr right = comparison();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = comparison();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr comparison() {
-        Expr expr = concatenation();
+    private Expression comparison() {
+        Expression expr = concatenation();
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             Token operator = previous();
-            Expr right = concatenation();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = concatenation();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr concatenation() {
-        Expr expr = addition();
+    private Expression concatenation() {
+        Expression expr = addition();
         while (match(AMPERSAND)) {
             Token operator = previous();
-            Expr right = addition();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = addition();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr addition() {
-        Expr expr = multiplication();
+    private Expression addition() {
+        Expression expr = multiplication();
         while (match(PLUS, MINUS)) {
             Token operator = previous();
-            Expr right = multiplication();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = multiplication();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr multiplication() {
-        Expr expr = unary();
+    private Expression multiplication() {
+        Expression expr = unary();
         while (match(STAR, SLASH, PERCENT)) {
             Token operator = previous();
-            Expr right = unary();
-            expr = new Expr.Binary(expr, operator, right);
+            Expression right = unary();
+            expr = new Expression.Binary(expr, operator, right);
         }
         return expr;
     }
 
-    private Expr unary() {
+    private Expression unary() {
         if (match(NOT, MINUS)) {
             Token operator = previous();
-            Expr right = unary();
-            return new Expr.Unary(operator, right);
+            Expression right = unary();
+            return new Expression.Unary(operator, right);
         }
         return primary();
     }
 
-    private Expr primary() {
-        if (match(NIL)) return new Expr.Literal(previous().literal);
-        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expr.Literal(
+    private Expression primary() {
+        if (match(NIL)) return new Expression.Literal(previous().literal);
+        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expression.Literal(
             previous().literal
         );
-        if (match(DOLLAR, ESCAPE)) return new Expr.Literal(previous().literal);
-        if (match(IDENTIFIER)) return new Expr.Variable(previous());
+        if (match(DOLLAR, ESCAPE)) return new Expression.Literal(previous().literal);
+        if (match(IDENTIFIER)) return new Expression.Variable(previous());
         if (match(LEFT_PAREN)) {
-            Expr expr = expression();
+            Expression expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
-            return new Expr.Grouping(expr);
+            return new Expression.Grouping(expr);
         }
         throw error(peek(), "Expect expression.");
     }

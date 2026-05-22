@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static interpreter.TokenType.*;
 
-public class Scanner {
+public class Lexer {
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
     private int start = 0;
@@ -34,7 +34,7 @@ public class Scanner {
         // TRUE and FALSE are not keywords; they are string literals "TRUE"/"FALSE"
     }
 
-    Scanner(String source) {
+    Lexer(String source) {
         this.source = source;
     }
 

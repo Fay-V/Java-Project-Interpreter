@@ -5,12 +5,12 @@ import java.util.Scanner;
 
 import static interpreter.TokenType.*;
 
-public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void> {
     private Environment environment = new Environment();
 
-    void interpret(List<Stmt> statements) {
+    void interpret(List<Statement> statements) {
         try {
-            for (Stmt statement : statements) {
+            for (Statement statement : statements) {
                 execute(statement);
             }
         } catch (RuntimeError error) {
@@ -18,29 +18,29 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    private void execute(Stmt stmt) {
+    private void execute(Statement stmt) {
         stmt.accept(this);
     }
 
-    private Object evaluate(Expr expr) {
+    private Object evaluate(Expression expr) {
         return expr.accept(this);
     }
 
     // ---------- Statements ----------
     @Override
-    public Void visitBlockStmt(Stmt.Block stmt) {
-        for (Stmt s : stmt.statements) {
+    public Void visitBlockStmt(Statement.Block stmt) {
+        for (Statement s : stmt.statements) {
             execute(s);
         }
         return null;
     }
 
     @Override
-    public Void visitDeclarationStmt(Stmt.Declaration stmt) {
+    public Void visitDeclarationStmt(Statement.Declaration stmt) {
         DataType type = dataTypeForToken(stmt.type);
         for (int i = 0; i < stmt.names.size(); i++) {
             Token name = stmt.names.get(i);
-            Expr initializer = stmt.initializers.get(i);
+            Expression initializer = stmt.initializers.get(i);
             Object value = null;
             if (initializer != null) {
                 value = evaluate(initializer);
@@ -52,20 +52,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitExpressionStmt(Stmt.Expression stmt) {
+    public Void visitExpressionStmt(Statement.Expression stmt) {
         evaluate(stmt.expression);
         return null;
     }
 
     @Override
-    public Void visitPrintStmt(Stmt.Print stmt) {
+    public Void visitPrintStmt(Statement.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
     }
 
     @Override
-    public Void visitScanStmt(Stmt.Scan stmt) {
+    public Void visitScanStmt(Statement.Scan stmt) {
         Scanner scanner = new Scanner(System.in);
         String line = scanner.nextLine();
         String[] parts = line.split(",");
@@ -106,12 +106,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitIfStmt(Stmt.If stmt) {
+    public Void visitIfStmt(Statement.If stmt) {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
         } else {
             boolean executed = false;
-            for (Stmt.If.ElseIf elseIf : stmt.elseIfs) {
+            for (Statement.If.ElseIf elseIf : stmt.elseIfs) {
                 if (isTruthy(evaluate(elseIf.condition))) {
                     execute(elseIf.thenBranch);
                     executed = true;
@@ -126,7 +126,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitForStmt(Stmt.For stmt) {
+    public Void visitForStmt(Statement.For stmt) {
         if (stmt.initializer != null) {
             evaluate(stmt.initializer);
         }
@@ -143,7 +143,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitRepeatStmt(Stmt.Repeat stmt) {
+    public Void visitRepeatStmt(Statement.Repeat stmt) {
         while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
         }
@@ -152,12 +152,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // ---------- Expressions ----------
     @Override
-    public Object visitLiteralExpr(Expr.Literal expr) {
+    public Object visitLiteralExpr(Expression.Literal expr) {
         return expr.value;
     }
 
     @Override
-    public Object visitUnaryExpr(Expr.Unary expr) {
+    public Object visitUnaryExpr(Expression.Unary expr) {
         Object right = evaluate(expr.right);
         switch (expr.operator.type) {
             case MINUS:
@@ -171,7 +171,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitBinaryExpr(Expr.Binary expr) {
+    public Object visitBinaryExpr(Expression.Binary expr) {
         // Short-circuit logical operators
         if (expr.operator.type == AND) {
             Object left = evaluate(expr.left);
@@ -229,19 +229,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitVariableExpr(Expr.Variable expr) {
+    public Object visitVariableExpr(Expression.Variable expr) {
         return environment.get(expr.name);
     }
 
     @Override
-    public Object visitAssignExpr(Expr.Assign expr) {
+    public Object visitAssignExpr(Expression.Assign expr) {
         Object value = evaluate(expr.value);
         environment.assign(expr.name, value);
         return value;
     }
 
     @Override
-    public Object visitGroupingExpr(Expr.Grouping expr) {
+    public Object visitGroupingExpr(Expression.Grouping expr) {
         return evaluate(expr.expression);
     }
 
