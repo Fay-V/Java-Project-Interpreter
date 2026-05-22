@@ -255,6 +255,21 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     private boolean isEqual(Object a, Object b) {
         if (a == null && b == null) return true;
         if (a == null) return false;
+
+        // Handle boolean-string comparison
+        if (a instanceof Boolean && b instanceof String) {
+            String bStr = (String) b;
+            if (bStr.equals("TRUE")) return (Boolean) a == true;
+            if (bStr.equals("FALSE")) return (Boolean) a == false;
+            return false;
+        }
+        if (b instanceof Boolean && a instanceof String) {
+            String aStr = (String) a;
+            if (aStr.equals("TRUE")) return (Boolean) b == true;
+            if (aStr.equals("FALSE")) return (Boolean) b == false;
+            return false;
+        }
+
         return a.equals(b);
     }
 

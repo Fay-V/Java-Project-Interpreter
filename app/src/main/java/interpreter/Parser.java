@@ -159,9 +159,14 @@ public class Parser {
         List<Statement> statements = new ArrayList<>();
         while (!check(endType) && !isAtEnd()) {
             statements.add(statement());
-            consume(NEWLINE, "Expect newline after statement.");
+            // Only require newline if there is another statement following
+            if (!check(endType)) {
+                consume(NEWLINE, "Expect newline after statement.");
+            }
             skipNewlines();
         }
+        // Allow optional newlines before the closing token
+        skipNewlines();
         consume(endType, "Expect '" + endType.name() + "'.");
         return new Statement.Block(statements);
     }
@@ -271,7 +276,7 @@ public class Parser {
 
     private Expression primary() {
         if (match(NIL)) return new Expression.Literal(previous().literal);
-        if (match(NUMBER, STRING, CHAR_LITERAL)) return new Expression.Literal(
+        if (match(NUMBER, STRING, CHAR_LITERAL, BOOL_LITERAL)) return new Expression.Literal(
             previous().literal
         );
         if (match(DOLLAR, ESCAPE)) return new Expression.Literal(previous().literal);

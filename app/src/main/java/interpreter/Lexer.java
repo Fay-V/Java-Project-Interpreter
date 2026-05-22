@@ -155,25 +155,19 @@ public class Lexer {
                     if (peek() == ']') {
                         advance();
                         sb.append('#');
-                    } else {
-                        App.error(line, "Expect ']' after '[#' escape.");
-                    }
+                    } else { App.error(line, "Expect ']' after '[#' escape."); }
                 } else if (peek() == '[') {
                     advance();
                     if (peek() == ']') {
                         advance();
                         sb.append('[');
-                    } else {
-                        App.error(line, "Expect ']' after '[[' escape.");
-                    }
+                    } else { App.error(line, "Expect ']' after '[[' escape."); }
                 } else if (peek() == ']') {
                     advance();
                     if (peek() == ']') {
                         advance();
                         sb.append(']');
-                    } else {
-                        App.error(line, "Expect ']' after '[]' escape.");
-                    }
+                    } else { App.error(line, "Expect ']' after '[]' escape."); }
                 } else {
                     App.error(line, "Invalid escape sequence inside string.");
                 }
@@ -181,12 +175,16 @@ public class Lexer {
                 sb.append(advance());
             }
         }
-        if (isAtEnd()) {
-            App.error(line, "Unterminated string.");
-            return;
-        }
+        if (isAtEnd()) { App.error(line, "Unterminated string."); return; }
         advance(); // closing quote
-        addToken(STRING, sb.toString());
+        String content = sb.toString();
+        if (content.equals("TRUE")) {
+            addToken(BOOL_LITERAL, true);
+        } else if (content.equals("FALSE")) {
+            addToken(BOOL_LITERAL, false);
+        } else {
+            addToken(STRING, content);
+        }
     }
 
     private boolean isDoubleQuote(char c) {
@@ -216,11 +214,21 @@ public class Lexer {
 
     private void number() {
         while (isDigit(peek())) advance();
+
+        boolean isFloat = false;
         if (peek() == '.' && isDigit(peekNext())) {
+            isFloat = true;
             advance();
             while (isDigit(peek())) advance();
         }
-        addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
+
+        String text = source.substring(start, current);
+        if (isFloat) {
+            addToken(NUMBER, Double.parseDouble(text));
+        } else {
+            // Parse as integer if no decimal point
+            addToken(NUMBER, Integer.parseInt(text));
+        }
     }
 
     private void identifier() {

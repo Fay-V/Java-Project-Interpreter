@@ -1,6 +1,17 @@
+%% test_if_or.lexor
 SCRIPT AREA
 START SCRIPT
-DECLARE INT a = 5
-DECLARE INT b = ((a + 3) * (a - 2)) / 2
-PRINT: b
+    DECLARE INT num = -5
+    DECLARE BOOL result
+
+    %% IF with OR condition
+    IF (num < 0 OR num == 0)
+        START IF
+            PRINT: "Number is zero or negative" & $ & [[] & num & []]
+        END IF
+    ELSE
+        START IF
+            PRINT: "Number is positive" & $ & [[] & num & []]
+        END IF
+
 END SCRIPT
