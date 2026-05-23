@@ -8,12 +8,12 @@ START IF
 END IF
 ELSE
 START IF
-  convertedHour = hour
-  IF (hour==0)
-  START IF
+  convertedHour = hour
+  IF (hour==0)
+  START IF
     convertedHour = 12
-    PRINT: convertedHour & [:] & minute & "AM"
-    END IF
+    PRINT: convertedHour & [:] & minute & "AM"
+    END IF
     ELSE IF(hour>0 AND hour<12)
   START IF
     convertedHour = hour

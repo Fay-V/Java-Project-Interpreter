@@ -109,15 +109,17 @@ public class Lexer {
             case ' ':
             case '\r':
             case '\t':
-                // ignore whitespace
+                
                 break;
             default:
-                if (isDigit(c)) {
+                if (Character.isWhitespace(c) || Character.isSpaceChar(c)){
+
+                } else if (isDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
                     identifier();
                 } else {
-                    App.error(line, "Unexpected character '" + c + "'.");
+                    App.error(line, "Unexpected character '" + c + " U+"+ Integer.toHexString(c) +"'.");
                 }
                 break;
         }
