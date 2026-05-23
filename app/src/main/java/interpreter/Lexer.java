@@ -171,6 +171,14 @@ public class Lexer {
                 } else {
                     App.error(line, "Invalid escape sequence inside string.");
                 }
+            } else if (peek() == ':') {
+                advance();
+                if (peek() == ']') {
+                    advance();
+                    sb.append(':');
+                } else {
+                    App.error(line, "smthn");
+                }
             } else {
                 sb.append(advance());
             }
@@ -199,6 +207,7 @@ public class Lexer {
         switch (code) {
             case '#': literal = '#'; break;
             case '[': literal = '['; break;
+            case ':': literal = ':'; break;
             case ']': literal = ']'; break;
             default:
                 App.error(line, "Invalid escape code '" + code + "'.");

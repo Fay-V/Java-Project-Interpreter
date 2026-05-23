@@ -1,7 +1,0 @@
-SCRIPT AREA
-START SCRIPT
-DECLARE INT a=1, b=2.3
-DECLARE FLOAT d=3.0
-END SCRIPT
-
-%%Output error, no float for int.

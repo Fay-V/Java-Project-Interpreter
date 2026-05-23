@@ -1,17 +1,17 @@
-%% this is a sample program in LEXOR
-
+%% test_if_or.lexor
 SCRIPT AREA
 START SCRIPT
+    DECLARE INT num = -5
+    DECLARE BOOL result
 
-DECLARE INT x, y, z=5
-DECLARE CHAR a_1='n'
-DECLARE BOOL t="TRUE"
-
-x = y = 4
-a_1 = 'c'
-
-%% this is a comment
-
-PRINT: x & t & z & $ & a_1 & [#] & "last"
+    %% IF with OR condition
+    IF (num < 0 OR num == 0)
+        START IF
+            PRINT: "Number is zero or negative" & $ & [[] & num & []]
+        END IF
+    ELSE
+        START IF
+            PRINT: "Number is positive" & $ & [[] & num & []]
+        END IF
 
 END SCRIPT
