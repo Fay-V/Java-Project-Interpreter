@@ -163,6 +163,9 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             case MINUS:
                 checkNumberOperand(expr.operator, right);
                 return (right instanceof Integer) ? -(int) right : -(double) right;
+            case PLUS:
+                checkNumberOperand(expr.operator, right);
+                return (right instanceof Integer) ? +(int) right : +(double) right;
             case NOT:
                 checkBooleanOperand(expr.operator, right);
                 return !(boolean) right;

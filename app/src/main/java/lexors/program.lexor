@@ -1,5 +1,6 @@
-%% test_if_or.lexor
 SCRIPT AREA
 START SCRIPT
-    PRINT: ":"
+DECLARE INT x
+x = +42
+PRINT: x
 END SCRIPT

@@ -266,7 +266,7 @@ public class Parser {
     }
 
     private Expression unary() {
-        if (match(NOT, MINUS)) {
+        if (match(NOT, MINUS, PLUS)) {
             Token operator = previous();
             Expression right = unary();
             return new Expression.Unary(operator, right);
