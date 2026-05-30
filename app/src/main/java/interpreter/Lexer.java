@@ -209,8 +209,23 @@ public class Lexer {
         switch (code) {
             case '#': literal = '#'; break;
             case '[': literal = '['; break;
-            case ':': literal = ':'; break;
             case ']': literal = ']'; break;
+            case ':': literal = ':'; break;
+            case '$': literal = '$'; break;
+            case '&': literal = '&'; break;
+            case '(': literal = '('; break;
+            case ')': literal = ')'; break;
+            case ',': literal = ','; break;
+            case '+': literal = '+'; break;
+            case '-': literal = '-'; break;
+            case '*': literal = '*'; break;
+            case '/': literal = '/'; break;
+            case '%': literal = '%'; break;
+            case '=': literal = '='; break;
+            case '>': literal = '>'; break;
+            case '<': literal = '<'; break;
+            case '"': literal = '"'; break;
+            case '\'': literal = '\''; break;
             default:
                 App.error(line, "Invalid escape code '" + code + "'.");
                 return;
