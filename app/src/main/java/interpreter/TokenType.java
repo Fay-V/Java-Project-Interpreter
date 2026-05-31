@@ -11,6 +11,7 @@ public enum TokenType {
     IF, ELSE, FOR, REPEAT, WHEN,
     AND, OR, NOT,
     TRUE, FALSE, NIL,
+    SCRIPT, AREA, START, END, PRINT, SCAN,
 
     // Operators and punctuation
     AMPERSAND, PLUS, MINUS, STAR, SLASH, PERCENT,

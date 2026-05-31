@@ -28,6 +28,12 @@ public class Lexer {
         keywords.put("OR", OR);
         keywords.put("NOT", NOT);
         keywords.put("NIL", NIL);
+        keywords.put("SCRIPT", SCRIPT);
+        keywords.put("AREA", AREA);
+        keywords.put("START", START);
+        keywords.put("END", END);
+        keywords.put("PRINT", PRINT);
+        keywords.put("SCAN", SCAN);
         // TRUE and FALSE are not keywords; they are string literals "TRUE"/"FALSE"
     }
 
@@ -217,16 +223,20 @@ public class Lexer {
 
         switch (text) {
             case "SCRIPT": {
+                int savedCurrent = current;
+                int savedLine = line;
                 skipWhitespaceAndNewlines();
                 if (matchNextIdentifier("AREA")) {
                     addToken(SCRIPT_AREA);
-                } else {
-                    App.error(line, "Expected 'AREA' after 'SCRIPT'.");
-                    addToken(SCRIPT_AREA);
+                    return;
                 }
-                return;
+                current = savedCurrent;
+                line = savedLine;
+                break;
             }
             case "START": {
+                int savedCurrent = current;
+                int savedLine = line;
                 skipWhitespaceAndNewlines();
                 if (matchNextIdentifier("SCRIPT")) {
                     addToken(START_SCRIPT);
@@ -237,12 +247,15 @@ public class Lexer {
                 } else if (matchNextIdentifier("REPEAT")) {
                     addToken(START_REPEAT);
                 } else {
-                    App.error(line, "Expected 'SCRIPT', 'IF', 'FOR', or 'REPEAT' after 'START'.");
-                    addToken(START_SCRIPT);
+                    current = savedCurrent;
+                    line = savedLine;
+                    break;
                 }
                 return;
             }
             case "END": {
+                int savedCurrent = current;
+                int savedLine = line;
                 skipWhitespaceAndNewlines();
                 if (matchNextIdentifier("SCRIPT")) {
                     addToken(END_SCRIPT);
@@ -253,8 +266,9 @@ public class Lexer {
                 } else if (matchNextIdentifier("REPEAT")) {
                     addToken(END_REPEAT);
                 } else {
-                    App.error(line, "Expected 'SCRIPT', 'IF', 'FOR', or 'REPEAT' after 'END'.");
-                    addToken(END_SCRIPT);
+                    current = savedCurrent;
+                    line = savedLine;
+                    break;
                 }
                 return;
             }
@@ -262,21 +276,17 @@ public class Lexer {
                 if (peek() == ':') {
                     advance();
                     addToken(PRINT_COLON);
-                } else {
-                    App.error(line, "Expected ':' after 'PRINT'.");
-                    addToken(PRINT_COLON);
+                    return;
                 }
-                return;
+                break;
             }
             case "SCAN": {
                 if (peek() == ':') {
                     advance();
                     addToken(SCAN_COLON);
-                } else {
-                    App.error(line, "Expected ':' after 'SCAN'.");
-                    addToken(SCAN_COLON);
+                    return;
                 }
-                return;
+                break;
             }
         }
 
