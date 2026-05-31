@@ -60,7 +60,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Void visitPrintStmt(Statement.Print stmt) {
         Object value = evaluate(stmt.expression);
-        System.out.println(stringify(value));
+        System.out.print(stringify(value));
         return null;
     }
 

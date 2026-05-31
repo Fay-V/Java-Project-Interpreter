@@ -92,11 +92,13 @@ public class Parser {
         consumeNewlineOrSkip("Expect newline after START IF.");
 
         Statement thenBranch = block(END_IF);
-        while (match(NEWLINE)) {}
+        while (match(NEWLINE)) {
+        }
 
         List<Statement.If.ElseIf> elseIfs = new ArrayList<>();
         while (match(ELSE)) {
-            while (match(NEWLINE)) {}
+            while (match(NEWLINE)) {
+            }
             if (check(IF)) {
                 consume(IF, "Expect 'IF' after ELSE.");
                 consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
@@ -106,13 +108,15 @@ public class Parser {
                 consume(START_IF, "Expect 'START IF'.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elifBranch = block(END_IF);
-                while (match(NEWLINE)) {}
+                while (match(NEWLINE)) {
+                }
                 elseIfs.add(new Statement.If.ElseIf(elifCondition, elifBranch));
             } else {
                 consume(START_IF, "Expect 'START IF' for ELSE.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elseBranch = block(END_IF);
-                while (match(NEWLINE)) {}
+                while (match(NEWLINE)) {
+                }
                 return new Statement.If(condition, thenBranch, elseIfs, elseBranch);
             }
         }
@@ -277,7 +281,7 @@ public class Parser {
     private Expression primary() {
         if (match(NIL)) return new Expression.Literal(previous().literal);
         if (match(NUMBER, STRING, CHAR_LITERAL, BOOL_LITERAL)) return new Expression.Literal(
-            previous().literal
+                previous().literal
         );
         if (match(DOLLAR, ESCAPE)) return new Expression.Literal(previous().literal);
         if (match(IDENTIFIER)) return new Expression.Variable(previous());
@@ -315,7 +319,8 @@ public class Parser {
     }
 
     private void skipNewlines() {
-        while (match(NEWLINE)) {}
+        while (match(NEWLINE)) {
+        }
     }
 
     private boolean match(TokenType... types) {
@@ -355,5 +360,6 @@ public class Parser {
         return new ParseError();
     }
 
-    private static class ParseError extends RuntimeException {}
+    private static class ParseError extends RuntimeException {
+    }
 }

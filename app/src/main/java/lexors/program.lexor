@@ -1,6 +1,15 @@
 SCRIPT AREA
 START SCRIPT
-DECLARE INT x
-x = +42
-PRINT: x
+DECLARE INT i, j, k
+FOR (i=1, i<=3, i=i+1)
+START FOR
+    FOR (j=1, j<=3, j=j+1)
+    START FOR
+        FOR (k=1, k<=3, k=k+1)
+        START FOR
+            PRINT: i & j & k
+        END FOR
+        PRINT: $
+    END FOR
+END FOR
 END SCRIPT
