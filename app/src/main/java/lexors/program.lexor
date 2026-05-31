@@ -1,15 +1,8 @@
 SCRIPT AREA
 START SCRIPT
-DECLARE INT i, j, k
-FOR (i=1, i<=3, i=i+1)
-START FOR
-    FOR (j=1, j<=3, j=j+1)
-    START FOR
-        FOR (k=1, k<=3, k=k+1)
-        START FOR
-            PRINT: i & j & k
-        END FOR
-        PRINT: $
-    END FOR
-END FOR
+DECLARE INT age=20, score=85
+IF (age >= 18 AND score >= 80)
+START IF
+PRINT: "eligible"
+END IF
 END SCRIPT

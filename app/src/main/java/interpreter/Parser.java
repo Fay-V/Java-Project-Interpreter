@@ -165,7 +165,7 @@ public class Parser {
             statements.add(statement());
             // Only require newline if there is another statement following
             if (!check(endType)) {
-                consume(NEWLINE, "Expect newline after statement.");
+                match(NEWLINE);
             }
             skipNewlines();
         }

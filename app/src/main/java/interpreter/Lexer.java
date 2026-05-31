@@ -146,43 +146,14 @@ public class Lexer {
     private void string() {
         StringBuilder sb = new StringBuilder();
         while (!isDoubleQuote(peek()) && !isAtEnd()) {
-            if (peek() == '\n') line++;
-            if (peek() == '$') {
-                advance();
-                sb.append('\n');
-            } else if (peek() == '[') {
-                advance();
-                if (peek() == '#') {
-                    advance();
-                    if (peek() == ']') {
-                        advance();
-                        sb.append('#');
-                    } else { App.error(line, "Expect ']' after '[#' escape."); }
-                } else if (peek() == '[') {
-                    advance();
-                    if (peek() == ']') {
-                        advance();
-                        sb.append('[');
-                    } else { App.error(line, "Expect ']' after '[[' escape."); }
-                } else if (peek() == ']') {
-                    advance();
-                    if (peek() == ']') {
-                        advance();
-                        sb.append(']');
-                    } else { App.error(line, "Expect ']' after '[]' escape."); }
-                } else {
-                    App.error(line, "Invalid escape sequence inside string.");
-                }
-            } else if (peek() == ':') {
-                advance();
-                if (peek() == ']') {
-                    advance();
-                    sb.append(':');
-                } else {
-                    App.error(line, "smthn");
-                }
-            } else {
-                sb.append(advance());
+            char code = peek();
+            switch (code){
+                case '#': case '[': case ']': case ':': case '$': case '&': case '(':
+                case ')': case ',': case '+': case '-': case '*': case '/': case '%':
+                case '=': case '>': case '<': case '"': case '\'':
+                    App.error(line, "Invalid escape code '" + code + "' is inside string");
+                default:
+                    sb.append(advance());
             }
         }
         if (isAtEnd()) { App.error(line, "Unterminated string."); return; }
