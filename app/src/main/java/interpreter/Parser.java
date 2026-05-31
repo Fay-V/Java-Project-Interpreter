@@ -46,7 +46,11 @@ public class Parser {
     }
 
     private Statement declaration() {
-        Token type = consumeAnyOf("Expect data type.", INT, CHAR, BOOL, FLOAT);
+        Token type = null;
+        TokenType[] tokenTypes = {INT, CHAR, BOOL, FLOAT};
+        for (TokenType tokenType : tokenTypes) {
+            if (check(tokenType)) type = advance();
+        }
         List<Token> names = new ArrayList<>();
         List<Expression> initializers = new ArrayList<>();
         do {
@@ -92,13 +96,11 @@ public class Parser {
         consumeNewlineOrSkip("Expect newline after START IF.");
 
         Statement thenBranch = block(END_IF);
-        while (match(NEWLINE)) {
-        }
+        skipNewlines();
 
         List<Statement.If.ElseIf> elseIfs = new ArrayList<>();
         while (match(ELSE)) {
-            while (match(NEWLINE)) {
-            }
+            skipNewlines();
             if (check(IF)) {
                 consume(IF, "Expect 'IF' after ELSE.");
                 consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
@@ -108,15 +110,13 @@ public class Parser {
                 consume(START_IF, "Expect 'START IF'.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elifBranch = block(END_IF);
-                while (match(NEWLINE)) {
-                }
+                skipNewlines();
                 elseIfs.add(new Statement.If.ElseIf(elifCondition, elifBranch));
             } else {
                 consume(START_IF, "Expect 'START IF' for ELSE.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elseBranch = block(END_IF);
-                while (match(NEWLINE)) {
-                }
+                skipNewlines();
                 return new Statement.If(condition, thenBranch, elseIfs, elseBranch);
             }
         }
@@ -300,13 +300,6 @@ public class Parser {
             throw error(peek(), message);
         }
         if (check(type)) return advance();
-        throw error(peek(), message);
-    }
-
-    private Token consumeAnyOf(String message, TokenType... types) {
-        for (TokenType type : types) {
-            if (check(type)) return advance();
-        }
         throw error(peek(), message);
     }
 

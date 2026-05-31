@@ -1,9 +1,6 @@
 package interpreter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static interpreter.TokenType.*;
 
@@ -86,11 +83,11 @@ public class Lexer {
                 addToken(match('=') ? GREATER_EQUAL : GREATER);
                 break;
             // Single quotes (straight and smart/curly)
-            case '\'': case '\u2018': case '\u2019':  // ' ' '
+            case '\'': case '‘': case '’':  // ' ' '
                 charLiteral();
                 break;
             // Double quotes (straight and smart/curly)
-            case '"': case '\u201C': case '\u201D':   // " " "
+            case '"': case '“': case '”':   // " " "
                 string();
                 break;
             case '[':
@@ -112,13 +109,11 @@ public class Lexer {
                 
                 break;
             default:
-                if (Character.isWhitespace(c) || Character.isSpaceChar(c)){
-
-                } else if (isDigit(c)) {
+                if (isDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
                     identifier();
-                } else {
+                } else if (!Character.isWhitespace(c) && !Character.isSpaceChar(c)){
                     App.error(line, "Unexpected character '" + c + " U+"+ Integer.toHexString(c) +"'.");
                 }
                 break;
@@ -140,7 +135,7 @@ public class Lexer {
     }
 
     private boolean isSingleQuote(char c) {
-        return c == '\'' || c == '\u2018' || c == '\u2019';
+        return c == '\'' || c == '‘' || c == '’';
     }
 
     private void string() {
@@ -148,10 +143,9 @@ public class Lexer {
         while (!isDoubleQuote(peek()) && !isAtEnd()) {
             char code = peek();
             switch (code){
-                case '#': case '[': case ']': case ':': case '$': case '&': case '(':
-                case ')': case ',': case '+': case '-': case '*': case '/': case '%':
-                case '=': case '>': case '<': case '"': case '\'':
-                    App.error(line, "Invalid escape code '" + code + "' is inside string");
+                case '#': case '[': case ']': case ':':
+                case '$': case '&': case '"': case '\'':
+                    App.error(line, "Escape code '" + code + "' is inside string");
                 default:
                     sb.append(advance());
             }
@@ -169,14 +163,14 @@ public class Lexer {
     }
 
     private boolean isDoubleQuote(char c) {
-        return c == '"' || c == '\u201C' || c == '\u201D';
+        return c == '"' || c == '“' || c == '”';
     }
 
     private void escapeSequence() {
         // current is after '['
         if (isAtEnd()) { App.error(line, "Unterminated escape."); return; }
         char code = advance();
-        Character literal = null;
+        char literal;
         switch (code) {
             case '#': literal = '#'; break;
             case '[': literal = '['; break;
@@ -184,17 +178,6 @@ public class Lexer {
             case ':': literal = ':'; break;
             case '$': literal = '$'; break;
             case '&': literal = '&'; break;
-            case '(': literal = '('; break;
-            case ')': literal = ')'; break;
-            case ',': literal = ','; break;
-            case '+': literal = '+'; break;
-            case '-': literal = '-'; break;
-            case '*': literal = '*'; break;
-            case '/': literal = '/'; break;
-            case '%': literal = '%'; break;
-            case '=': literal = '='; break;
-            case '>': literal = '>'; break;
-            case '<': literal = '<'; break;
             case '"': literal = '"'; break;
             case '\'': literal = '\''; break;
             default:
@@ -215,8 +198,8 @@ public class Lexer {
         boolean isFloat = false;
         if (peek() == '.' && isDigit(peekNext())) {
             isFloat = true;
-            advance();
-            while (isDigit(peek())) advance();
+            do advance();
+            while (isDigit(peek()));
         }
 
         String text = source.substring(start, current);
@@ -299,11 +282,7 @@ public class Lexer {
 
         // Single‑word keyword or identifier (case‑sensitive)
         TokenType type = keywords.get(text);
-        if (type != null) {
-            addToken(type);
-        } else {
-            addToken(IDENTIFIER);
-        }
+        addToken(Objects.requireNonNullElse(type, IDENTIFIER));
     }
 
     private void skipWhitespaceAndNewlines() {

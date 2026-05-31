@@ -2,59 +2,66 @@ package interpreter;
 
 import java.util.List;
 
-abstract class Statement {
-    interface Visitor<R> {
-        R visitBlockStmt(Block stmt);
-        R visitDeclarationStmt(Declaration stmt);
-        R visitExpressionStmt(Expression stmt);
-        R visitPrintStmt(Print stmt);
-        R visitScanStmt(Scan stmt);
-        R visitIfStmt(If stmt);
-        R visitForStmt(For stmt);
-        R visitRepeatStmt(Repeat stmt);
+public abstract class Statement {
+    public interface Visitor {
+        void visitBlockStmt(Block stmt);
+        void visitDeclarationStmt(Declaration stmt);
+        void visitExpressionStmt(Expression stmt);
+        void visitPrintStmt(Print stmt);
+        void visitScanStmt(Scan stmt);
+        void visitIfStmt(If stmt);
+        void visitForStmt(For stmt);
+        void visitRepeatStmt(Repeat stmt);
     }
 
-    abstract <R> R accept(Visitor<R> visitor);
+    public abstract void accept(Visitor visitor);
 
-    static class Block extends Statement {
+    public static class Block extends Statement {
         final List<Statement> statements;
         Block(List<Statement> statements) { this.statements = statements; }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitBlockStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitBlockStmt(this);
+        }
     }
 
-    static class Declaration extends Statement {
+    public static class Declaration extends Statement {
         final Token type;
         final List<Token> names;
         final List<interpreter.Expression> initializers;
         Declaration(Token type, List<Token> names, List<interpreter.Expression> initializers) {
             this.type = type; this.names = names; this.initializers = initializers;
         }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitDeclarationStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitDeclarationStmt(this);
+        }
     }
 
-    static class Expression extends Statement {
+    public static class Expression extends Statement {
         final interpreter.Expression expression;
         Expression(interpreter.Expression expression) { this.expression = expression; }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitExpressionStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitExpressionStmt(this);
+        }
     }
 
-    static class Print extends Statement {
+    public static class Print extends Statement {
         final interpreter.Expression expression;
         Print(interpreter.Expression expression) { this.expression = expression; }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitPrintStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitPrintStmt(this);
+        }
     }
 
-    static class Scan extends Statement {
+    public static class Scan extends Statement {
         final List<Token> variables;
         Scan(List<Token> variables) { this.variables = variables; }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitScanStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitScanStmt(this);
+        }
     }
 
-    static class If extends Statement {
-        static class ElseIf {
-            final interpreter.Expression condition;
-            final Statement thenBranch;
-            ElseIf(interpreter.Expression condition, Statement thenBranch) { this.condition = condition; this.thenBranch = thenBranch; }
+    public static class If extends Statement {
+        record ElseIf(interpreter.Expression condition, Statement thenBranch) {
         }
         final interpreter.Expression condition;
         final Statement thenBranch;
@@ -64,10 +71,12 @@ abstract class Statement {
             this.condition = condition; this.thenBranch = thenBranch;
             this.elseIfs = elseIfs; this.elseBranch = elseBranch;
         }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitIfStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitIfStmt(this);
+        }
     }
 
-    static class For extends Statement {
+    public static class For extends Statement {
         final interpreter.Expression initializer;
         final interpreter.Expression condition;
         final interpreter.Expression increment;
@@ -76,13 +85,17 @@ abstract class Statement {
             this.initializer = initializer; this.condition = condition;
             this.increment = increment; this.body = body;
         }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitForStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitForStmt(this);
+        }
     }
 
-    static class Repeat extends Statement {
+    public static class Repeat extends Statement {
         final interpreter.Expression condition;
         final Statement body;
         Repeat(interpreter.Expression condition, Statement body) { this.condition = condition; this.body = body; }
-        @Override <R> R accept(Visitor<R> visitor) { return visitor.visitRepeatStmt(this); }
+        @Override public void accept(Visitor visitor) {
+            visitor.visitRepeatStmt(this);
+        }
     }
 }

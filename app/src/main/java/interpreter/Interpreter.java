@@ -5,8 +5,8 @@ import java.util.Scanner;
 
 import static interpreter.TokenType.*;
 
-public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void> {
-    private Environment environment = new Environment();
+public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor {
+    private final Environment environment = new Environment();
 
     void interpret(List<Statement> statements) {
         try {
@@ -28,15 +28,14 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
     // ---------- Statements ----------
     @Override
-    public Void visitBlockStmt(Statement.Block stmt) {
+    public void visitBlockStmt(Statement.Block stmt) {
         for (Statement s : stmt.statements) {
             execute(s);
         }
-        return null;
     }
 
     @Override
-    public Void visitDeclarationStmt(Statement.Declaration stmt) {
+    public void visitDeclarationStmt(Statement.Declaration stmt) {
         DataType type = dataTypeForToken(stmt.type);
         for (int i = 0; i < stmt.names.size(); i++) {
             Token name = stmt.names.get(i);
@@ -48,29 +47,26 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             }
             environment.define(name.lexeme, type, value);
         }
-        return null;
     }
 
     @Override
-    public Void visitExpressionStmt(Statement.Expression stmt) {
+    public void visitExpressionStmt(Statement.Expression stmt) {
         evaluate(stmt.expression);
-        return null;
     }
 
     @Override
-    public Void visitPrintStmt(Statement.Print stmt) {
+    public void visitPrintStmt(Statement.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.print(stringify(value));
-        return null;
     }
 
     @Override
-    public Void visitScanStmt(Statement.Scan stmt) {
+    public void visitScanStmt(Statement.Scan stmt) {
         Scanner scanner = new Scanner(System.in);
         String line = scanner.nextLine();
         String[] parts = line.split(",");
         if (parts.length != stmt.variables.size()) {
-            throw new RuntimeError(stmt.variables.get(0),
+            throw new RuntimeError(stmt.variables.getFirst(),
                 "Expected " + stmt.variables.size() + " values, got " + parts.length + ".");
         }
         for (int i = 0; i < parts.length; i++) {
@@ -83,7 +79,6 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             Object value = parseInputLiteral(trimmed, type, varToken);
             environment.assign(varToken, value);
         }
-        return null;
     }
 
     private Object parseInputLiteral(String input, DataType type, Token errorToken) {
@@ -106,14 +101,14 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     }
 
     @Override
-    public Void visitIfStmt(Statement.If stmt) {
+    public void visitIfStmt(Statement.If stmt) {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
         } else {
             boolean executed = false;
             for (Statement.If.ElseIf elseIf : stmt.elseIfs) {
-                if (isTruthy(evaluate(elseIf.condition))) {
-                    execute(elseIf.thenBranch);
+                if (isTruthy(evaluate(elseIf.condition()))) {
+                    execute(elseIf.thenBranch());
                     executed = true;
                     break;
                 }
@@ -122,11 +117,10 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 execute(stmt.elseBranch);
             }
         }
-        return null;
     }
 
     @Override
-    public Void visitForStmt(Statement.For stmt) {
+    public void visitForStmt(Statement.For stmt) {
         if (stmt.initializer != null) {
             evaluate(stmt.initializer);
         }
@@ -139,15 +133,13 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 evaluate(stmt.increment);
             }
         }
-        return null;
     }
 
     @Override
-    public Void visitRepeatStmt(Statement.Repeat stmt) {
+    public void visitRepeatStmt(Statement.Repeat stmt) {
         while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
         }
-        return null;
     }
 
     // ---------- Expressions ----------
@@ -159,18 +151,21 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Object visitUnaryExpr(Expression.Unary expr) {
         Object right = evaluate(expr.right);
-        switch (expr.operator.type) {
-            case MINUS:
+        return switch (expr.operator.type) {
+            case MINUS -> {
                 checkNumberOperand(expr.operator, right);
-                return (right instanceof Integer) ? -(int) right : -(double) right;
-            case PLUS:
+                yield (right instanceof Integer) ? -(int) right : -(double) right;
+            }
+            case PLUS -> {
                 checkNumberOperand(expr.operator, right);
-                return (right instanceof Integer) ? +(int) right : +(double) right;
-            case NOT:
+                yield (right instanceof Integer) ? +(int) right : +(double) right;
+            }
+            case NOT -> {
                 checkBooleanOperand(expr.operator, right);
-                return !(boolean) right;
-        }
-        return null;
+                yield !(boolean) right;
+            }
+            default -> null;
+        };
     }
 
     @Override
@@ -182,7 +177,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             if (!(boolean) left) return false;
             Object right = evaluate(expr.right);
             checkBooleanOperand(expr.operator, right);
-            return (boolean) right;
+            return right;
         }
         if (expr.operator.type == OR) {
             Object left = evaluate(expr.left);
@@ -190,7 +185,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             if ((boolean) left) return true;
             Object right = evaluate(expr.right);
             checkBooleanOperand(expr.operator, right);
-            return (boolean) right;
+            return right;
         }
 
         Object left = evaluate(expr.left);
@@ -260,16 +255,14 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         if (a == null) return false;
 
         // Handle boolean-string comparison
-        if (a instanceof Boolean && b instanceof String) {
-            String bStr = (String) b;
-            if (bStr.equals("TRUE")) return (Boolean) a == true;
-            if (bStr.equals("FALSE")) return (Boolean) a == false;
+        if (a instanceof Boolean && b instanceof String bStr) {
+            if (bStr.equals("TRUE")) return (Boolean) a;
+            if (bStr.equals("FALSE")) return !((Boolean) a);
             return false;
         }
-        if (b instanceof Boolean && a instanceof String) {
-            String aStr = (String) a;
-            if (aStr.equals("TRUE")) return (Boolean) b == true;
-            if (aStr.equals("FALSE")) return (Boolean) b == false;
+        if (b instanceof Boolean && a instanceof String aStr) {
+            if (aStr.equals("TRUE")) return (Boolean) b;
+            if (aStr.equals("FALSE")) return !((Boolean) b);
             return false;
         }
 
@@ -277,26 +270,38 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     }
 
     private String stringify(Object value) {
-        if (value == null) return "nil";
-        if (value instanceof Double) {
-            String text = value.toString();
-            if (text.endsWith(".0")) text = text.substring(0, text.length() - 2);
-            return text;
+        switch (value) {
+            case null -> {
+                return "nil";
+            }
+            case Double ignored -> {
+                String text = value.toString();
+                if (text.endsWith(".0")) text = text.substring(0, text.length() - 2);
+                return text;
+            }
+            case Character ignored -> {
+                return String.valueOf((char) value);
+            }
+            case String s -> {
+                return s;
+            }
+            case Boolean ignored -> {
+                return ((boolean) value) ? "TRUE" : "FALSE";
+            }
+            default -> {
+            }
         }
-        if (value instanceof Character) return String.valueOf((char) value);
-        if (value instanceof String) return (String) value;
-        if (value instanceof Boolean) return ((boolean) value) ? "TRUE" : "FALSE";
         return value.toString();
     }
 
     private DataType dataTypeForToken(Token token) {
-        switch (token.type) {
-            case INT: return DataType.INT;
-            case FLOAT: return DataType.FLOAT;
-            case CHAR: return DataType.CHAR;
-            case BOOL: return DataType.BOOL;
-            default: throw new RuntimeError(token, "Invalid data type.");
-        }
+        return switch (token.type) {
+            case INT -> DataType.INT;
+            case FLOAT -> DataType.FLOAT;
+            case CHAR -> DataType.CHAR;
+            case BOOL -> DataType.BOOL;
+            default -> throw new RuntimeError(token, "Invalid data type.");
+        };
     }
 
     private Object checkAndConvert(DataType expected, Object value, Token token) {
@@ -319,13 +324,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 throw new RuntimeError(token, "Type mismatch: expected CHAR.");
             case BOOL:
                 if (value instanceof Boolean) return value;
-    if (value instanceof String) {
-        String s = (String) value;
-            if (s.equalsIgnoreCase("TRUE")) return true;
-            if (s.equalsIgnoreCase("FALSE")) return false;
-            throw new RuntimeError(token, "Invalid boolean literal: " + s);
-        }
-        throw new RuntimeError(token, "Type mismatch: expected BOOL.");
+            if (value instanceof String s) {
+                if (s.equalsIgnoreCase("TRUE")) return true;
+                if (s.equalsIgnoreCase("FALSE")) return false;
+                throw new RuntimeError(token, "Invalid boolean literal: " + s);
+            }
+            throw new RuntimeError(token, "Type mismatch: expected BOOL.");
         }
         throw new RuntimeError(token, "Unknown type.");
     }
