@@ -27,7 +27,6 @@ public class Lexer {
         keywords.put("AND", AND);
         keywords.put("OR", OR);
         keywords.put("NOT", NOT);
-        keywords.put("NIL", NIL);
         keywords.put("SCRIPT", SCRIPT);
         keywords.put("AREA", AREA);
         keywords.put("START", START);
@@ -76,9 +75,6 @@ public class Lexer {
                 break;
             case '=':
                 addToken(match('=') ? EQUAL_EQUAL : EQUAL);
-                break;
-            case '!':
-                addToken(match('=') ? NOT_EQUAL : BANG);
                 break;
             case '<':
                 if (match('=')) addToken(LESS_EQUAL);

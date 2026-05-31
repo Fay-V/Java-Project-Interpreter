@@ -102,12 +102,20 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
     @Override
     public void visitIfStmt(Statement.If stmt) {
-        if (isTruthy(evaluate(stmt.condition))) {
+        Object condition = evaluate(stmt.condition);
+        if (!(condition instanceof Boolean)) {
+            throw new RuntimeError(null, "IF condition must be a boolean.");
+        }
+        if ((boolean) condition) {
             execute(stmt.thenBranch);
         } else {
             boolean executed = false;
             for (Statement.If.ElseIf elseIf : stmt.elseIfs) {
-                if (isTruthy(evaluate(elseIf.condition()))) {
+                Object elifCond = evaluate(elseIf.condition());
+                if (!(elifCond instanceof Boolean)) {
+                    throw new RuntimeError(null, "ELSE IF condition must be a boolean.");
+                }
+                if ((boolean) elifCond) {
                     execute(elseIf.thenBranch());
                     executed = true;
                     break;
@@ -126,7 +134,11 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
         while (true) {
             if (stmt.condition != null) {
-                if (!isTruthy(evaluate(stmt.condition))) break;
+                Object condition = evaluate(stmt.condition);
+                if (!(condition instanceof Boolean)) {
+                    throw new RuntimeError(null, "FOR condition must be a boolean.");
+                }
+                if (!(boolean) condition) break;
             }
             execute(stmt.body);
             if (stmt.increment != null) {
@@ -137,7 +149,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
     @Override
     public void visitRepeatStmt(Statement.Repeat stmt) {
-        while (isTruthy(evaluate(stmt.condition))) {
+        while (true) {
+            Object condition = evaluate(stmt.condition);
+            if (!(condition instanceof Boolean)) {
+                throw new RuntimeError(null, "REPEAT condition must be a boolean.");
+            }
+            if (!(boolean) condition) break;
             execute(stmt.body);
         }
     }
@@ -193,14 +210,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
         switch (expr.operator.type) {
             case PLUS:
-                if (left instanceof String || right instanceof String)
-                    return stringify(left) + stringify(right);
-                // numeric addition
+                // numeric addition only
                 if (left instanceof Integer && right instanceof Integer) return (int) left + (int) right;
                 if (left instanceof Double && right instanceof Double) return (double) left + (double) right;
                 if (left instanceof Integer && right instanceof Double) return (int) left + (double) right;
                 if (left instanceof Double && right instanceof Integer) return (double) left + (int) right;
-                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
+                throw new RuntimeError(expr.operator, "Operands must be two numbers.");
             case MINUS: checkNumberOperands(expr.operator, left, right);
                 return numericOp(left, right, (a,b)->a-b, (a,b)->a-b);
             case STAR: checkNumberOperands(expr.operator, left, right);

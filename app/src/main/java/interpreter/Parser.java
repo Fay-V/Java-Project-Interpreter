@@ -32,7 +32,9 @@ public class Parser {
         // Executable statements
         while (!check(END_SCRIPT) && !isAtEnd()) {
             statements.add(statement());
-            match(NEWLINE); // replace consume with match
+            if (!check(END_SCRIPT)) {
+                consume(NEWLINE, "Expect newline after statement.");
+            }
             skipNewlines();
         }
 
@@ -50,6 +52,9 @@ public class Parser {
         TokenType[] tokenTypes = {INT, CHAR, BOOL, FLOAT};
         for (TokenType tokenType : tokenTypes) {
             if (check(tokenType)) type = advance();
+        }
+        if (type == null) {
+            throw error(peek(), "Expect data type in declaration.");
         }
         List<Token> names = new ArrayList<>();
         List<Expression> initializers = new ArrayList<>();
@@ -163,9 +168,8 @@ public class Parser {
         List<Statement> statements = new ArrayList<>();
         while (!check(endType) && !isAtEnd()) {
             statements.add(statement());
-            // Only require newline if there is another statement following
             if (!check(endType)) {
-                match(NEWLINE);
+                consume(NEWLINE, "Expect newline after statement.");
             }
             skipNewlines();
         }
@@ -279,7 +283,6 @@ public class Parser {
     }
 
     private Expression primary() {
-        if (match(NIL)) return new Expression.Literal(previous().literal);
         if (match(NUMBER, STRING, CHAR_LITERAL, BOOL_LITERAL)) return new Expression.Literal(
                 previous().literal
         );

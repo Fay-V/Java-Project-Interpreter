@@ -10,14 +10,13 @@ public enum TokenType {
     PRINT_COLON, SCAN_COLON,
     IF, ELSE, FOR, REPEAT, WHEN,
     AND, OR, NOT,
-    TRUE, FALSE, NIL,
     SCRIPT, AREA, START, END, PRINT, SCAN,
 
     // Operators and punctuation
     AMPERSAND, PLUS, MINUS, STAR, SLASH, PERCENT,
     GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
     EQUAL_EQUAL, NOT_EQUAL,
-    EQUAL, BANG,
+    EQUAL,
     LEFT_PAREN, RIGHT_PAREN, COMMA, SEMICOLON,
     DOLLAR, ESCAPE,      // $ and [x] escape sequences
 
