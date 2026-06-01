@@ -158,7 +158,6 @@ public class Lexer {
             line++;
             addToken(NEWLINE);
         }
-        // Other whitespace (' ', '\r', '\t') are simply ignored as they have been advanced
     }
 
     private void scanSpecial(char c) {
@@ -166,7 +165,6 @@ public class Lexer {
             addToken(DOLLAR, '\n');
         } else if (c == ']') {
             App.error(line, "Unexpected ']' outside string.");
-
         }
     }
 
@@ -191,11 +189,20 @@ public class Lexer {
     private void string() {
         StringBuilder sb = new StringBuilder();
         while (!isDoubleQuote(peek()) && !isAtEnd()) {
+            if (peek() == '[') {
+                advance(); // consume '['
+                char escaped = getEscapedChar();
+                if (escaped != '\0') sb.append(escaped);
+                continue;
+            }
+            
             char code = peek();
             switch (code){
                 case '#': case '[': case ']': case ':':
                 case '$': case '&': case '"': case '\'':
                     App.error(line, "Escape code '" + code + "' is inside string");
+                    advance(); // advance to avoid infinite loop
+                    break;
                 default:
                     sb.append(advance());
             }
@@ -217,28 +224,24 @@ public class Lexer {
     }
 
     private void escapeSequence() {
-        if (isAtEnd()) { App.error(line, "Unterminated escape."); return; }
-        char code = advance();
-        char literal;
-        switch (code) {
-            case '#': literal = '#'; break;
-            case '[': literal = '['; break;
-            case ']': literal = ']'; break;
-            case ':': literal = ':'; break;
-            case '$': literal = '$'; break;
-            case '&': literal = '&'; break;
-            case '"': literal = '"'; break;
-            case '\'': literal = '\''; break;
-            default:
-                App.error(line, "Invalid escape code '" + code + "'.");
-                return;
+        char escaped = getEscapedChar();
+        if (escaped != '\0') {
+            addToken(ESCAPE, escaped);
         }
+    }
+
+    private char getEscapedChar() {
+        if (isAtEnd()) {
+            App.error(line, "Unterminated escape.");
+            return '\0';
+        }
+        char code = advance();
         if (peek() != ']') {
             App.error(line, "Expect ']' after escape.");
-            return;
+            return '\0';
         }
-        advance();
-        addToken(ESCAPE, literal);
+        advance(); // consume closing ']'
+        return code;
     }
 
     private void number() {
