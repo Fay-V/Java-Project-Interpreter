@@ -101,13 +101,13 @@ public class Parser {
         consumeNewlineOrSkip("Expect newline after START IF.");
 
         Statement thenBranch = block(END_IF);
-        skipNewlines();
 
         List<Statement.If.ElseIf> elseIfs = new ArrayList<>();
-        while (match(ELSE)) {
+        while (checkNextIgnoringNewlines(ELSE)) {
             skipNewlines();
-            if (check(IF)) {
-                consume(IF, "Expect 'IF' after ELSE.");
+            consume(ELSE, "Expect 'ELSE'.");
+            skipNewlines();
+            if (match(IF)) {
                 consume(LEFT_PAREN, "Expect '(' after ELSE IF.");
                 Expression elifCondition = expression();
                 consume(RIGHT_PAREN, "Expect ')' after condition.");
@@ -115,17 +115,24 @@ public class Parser {
                 consume(START_IF, "Expect 'START IF'.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elifBranch = block(END_IF);
-                skipNewlines();
                 elseIfs.add(new Statement.If.ElseIf(elifCondition, elifBranch));
             } else {
                 consume(START_IF, "Expect 'START IF' for ELSE.");
                 consumeNewlineOrSkip("Expect newline after START IF.");
                 Statement elseBranch = block(END_IF);
-                skipNewlines();
                 return new Statement.If(condition, thenBranch, elseIfs, elseBranch);
             }
         }
         return new Statement.If(condition, thenBranch, elseIfs, null);
+    }
+
+    private boolean checkNextIgnoringNewlines(TokenType type) {
+        int temp = current;
+        while (temp < tokens.size() && tokens.get(temp).type == NEWLINE) {
+            temp++;
+        }
+        if (temp >= tokens.size()) return false;
+        return tokens.get(temp).type == type;
     }
 
     private Statement forStatement() {
