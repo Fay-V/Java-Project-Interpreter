@@ -12,6 +12,13 @@ public class Lexer {
     private int line = 1;
 
     private static final Map<String, TokenType> keywords;
+    private static final Map<Character, TokenType> simpleTokens;
+    private static final Map<Character, CharCategory> charCategories;
+
+    private enum CharCategory {
+        OPERATOR, LITERAL, WHITESPACE, SPECIAL
+    }
+    
     static {
         keywords = new HashMap<>();
         keywords.put("DECLARE", DECLARE);
@@ -33,7 +40,39 @@ public class Lexer {
         keywords.put("END", END);
         keywords.put("PRINT", PRINT);
         keywords.put("SCAN", SCAN);
-        // TRUE and FALSE are not keywords; they are string literals "TRUE"/"FALSE"
+
+        simpleTokens = new HashMap<>();
+        simpleTokens.put('(', LEFT_PAREN);
+        simpleTokens.put(')', RIGHT_PAREN);
+        simpleTokens.put(',', COMMA);
+        simpleTokens.put(';', SEMICOLON);
+        simpleTokens.put('&', AMPERSAND);
+        simpleTokens.put('+', PLUS);
+        simpleTokens.put('-', MINUS);
+        simpleTokens.put('*', STAR);
+        simpleTokens.put('/', SLASH);
+
+        charCategories = new HashMap<>();
+        charCategories.put('%', CharCategory.OPERATOR);
+        charCategories.put('=', CharCategory.OPERATOR);
+        charCategories.put('<', CharCategory.OPERATOR);
+        charCategories.put('>', CharCategory.OPERATOR);
+
+        charCategories.put('\'', CharCategory.LITERAL);
+        charCategories.put('‘', CharCategory.LITERAL);
+        charCategories.put('’', CharCategory.LITERAL);
+        charCategories.put('"', CharCategory.LITERAL);
+        charCategories.put('“', CharCategory.LITERAL);
+        charCategories.put('”', CharCategory.LITERAL);
+        charCategories.put('[', CharCategory.LITERAL);
+
+        charCategories.put('\n', CharCategory.WHITESPACE);
+        charCategories.put(' ', CharCategory.WHITESPACE);
+        charCategories.put('\r', CharCategory.WHITESPACE);
+        charCategories.put('\t', CharCategory.WHITESPACE);
+
+        charCategories.put('$', CharCategory.SPECIAL);
+        charCategories.put(']', CharCategory.SPECIAL);
     }
 
     Lexer(String source) {
@@ -55,19 +94,36 @@ public class Lexer {
 
     private void scanToken() {
         char c = advance();
+
+        if (simpleTokens.containsKey(c)) {
+            addToken(simpleTokens.get(c));
+            return;
+        }
+
+        CharCategory category = charCategories.get(c);
+        if (category != null) {
+            switch (category) {
+                case OPERATOR:   scanOperator(c);   break;
+                case LITERAL:    scanLiteral(c);    break;
+                case WHITESPACE: scanWhitespace(c); break;
+                case SPECIAL:    scanSpecial(c);    break;
+            }
+            return;
+        }
+
+        if (isDigit(c)) {
+            number();
+        } else if (isAlpha(c)) {
+            identifier();
+        } else if (!Character.isWhitespace(c) && !Character.isSpaceChar(c)){
+            App.error(line, "Unexpected character '" + c + " U+"+ Integer.toHexString(c) +"'.");
+        }
+    }
+
+    private void scanOperator(char c) {
         switch (c) {
-            case '(': addToken(LEFT_PAREN); break;
-            case ')': addToken(RIGHT_PAREN); break;
-            case ',': addToken(COMMA); break;
-            case ';': addToken(SEMICOLON); break;
-            case '&': addToken(AMPERSAND); break;
-            case '+': addToken(PLUS); break;
-            case '-': addToken(MINUS); break;
-            case '*': addToken(STAR); break;
-            case '/': addToken(SLASH); break;
             case '%':
                 if (match('%')) {
-                    // comment until end of line
                     while (peek() != '\n' && !isAtEnd()) advance();
                 } else {
                     addToken(PERCENT);
@@ -84,41 +140,33 @@ public class Lexer {
             case '>':
                 addToken(match('=') ? GREATER_EQUAL : GREATER);
                 break;
-            // Single quotes (straight and smart/curly)
-            case '\'': case '‘': case '’':  // ' ' '
-                charLiteral();
-                break;
-            // Double quotes (straight and smart/curly)
-            case '"': case '“': case '”':   // " " "
-                string();
-                break;
-            case '[':
-                escapeSequence();
-                break;
-            case ']':
-                App.error(line, "Unexpected ']' outside string.");
-                break;
-            case '$':
-                addToken(DOLLAR, '\n');
-                break;
-            case '\n':
-                line++;
-                addToken(NEWLINE);
-                break;
-            case ' ':
-            case '\r':
-            case '\t':
-                
-                break;
-            default:
-                if (isDigit(c)) {
-                    number();
-                } else if (isAlpha(c)) {
-                    identifier();
-                } else if (!Character.isWhitespace(c) && !Character.isSpaceChar(c)){
-                    App.error(line, "Unexpected character '" + c + " U+"+ Integer.toHexString(c) +"'.");
-                }
-                break;
+        }
+    }
+
+    private void scanLiteral(char c) {
+        if (isSingleQuote(c)) {
+            charLiteral();
+        } else if (isDoubleQuote(c)) {
+            string();
+        } else if (c == '[') {
+            escapeSequence();
+        }
+    }
+
+    private void scanWhitespace(char c) {
+        if (c == '\n') {
+            line++;
+            addToken(NEWLINE);
+        }
+        // Other whitespace (' ', '\r', '\t') are simply ignored as they have been advanced
+    }
+
+    private void scanSpecial(char c) {
+        if (c == '$') {
+            addToken(DOLLAR, '\n');
+        } else if (c == ']') {
+            App.error(line, "Unexpected ']' outside string.");
+
         }
     }
 
@@ -169,7 +217,6 @@ public class Lexer {
     }
 
     private void escapeSequence() {
-        // current is after '['
         if (isAtEnd()) { App.error(line, "Unterminated escape."); return; }
         char code = advance();
         char literal;
@@ -190,7 +237,7 @@ public class Lexer {
             App.error(line, "Expect ']' after escape.");
             return;
         }
-        advance(); // consume closing ']'
+        advance();
         addToken(ESCAPE, literal);
     }
 
@@ -208,7 +255,6 @@ public class Lexer {
         if (isFloat) {
             addToken(NUMBER, Double.parseDouble(text));
         } else {
-            // Parse as integer if no decimal point
             addToken(NUMBER, Integer.parseInt(text));
         }
     }
@@ -286,7 +332,6 @@ public class Lexer {
             }
         }
 
-        // Single‑word keyword or identifier (case‑sensitive)
         TokenType type = keywords.get(text);
         addToken(Objects.requireNonNullElse(type, IDENTIFIER));
     }
@@ -309,15 +354,15 @@ public class Lexer {
         if (current >= source.length()) return false;
         char c = source.charAt(current);
         if (!isAlpha(c)) return false;
-        int start = current;
+        int startPos = current;
         while (current < source.length() && isAlphaNumeric(source.charAt(current))) {
             current++;
         }
-        String found = source.substring(start, current);
+        String found = source.substring(startPos, current);
         if (found.equals(word)) {
             return true;
         } else {
-            current = start;
+            current = startPos;
             return false;
         }
     }
