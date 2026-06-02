@@ -93,6 +93,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                     if (input.equals("TRUE")) return true;
                     if (input.equals("FALSE")) return false;
                     throw new RuntimeError(errorToken, "BOOl must be TRUE or FALSE.");
+                case STRING: return input;
                 default: throw new RuntimeError(errorToken, "Unknown type.");
             }
         } catch (NumberFormatException e) {
@@ -315,6 +316,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             case FLOAT -> DataType.FLOAT;
             case CHAR -> DataType.CHAR;
             case BOOL -> DataType.BOOL;
+            case STRING -> DataType.STRING;
             default -> throw new RuntimeError(token, "Invalid data type.");
         };
     }
@@ -345,6 +347,10 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 throw new RuntimeError(token, "Invalid boolean literal: " + s);
             }
             throw new RuntimeError(token, "Type mismatch: expected BOOL.");
+            case STRING:
+                if (value instanceof String) return value;
+                if (value instanceof Boolean) return (boolean) value ? "TRUE" : "FALSE";
+                throw new RuntimeError(token, "Type mismatch: expected STRING.");
         }
         throw new RuntimeError(token, "Unknown type.");
     }

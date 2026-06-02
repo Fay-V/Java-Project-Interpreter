@@ -74,6 +74,10 @@ public class Environment {
             case BOOL:
                 if (value instanceof Boolean) return value;
                 throw new RuntimeError(token, "Type mismatch: expected BOOL.");
+            case STRING:
+                if (value instanceof String) return value;
+                if (value instanceof Boolean) return (boolean) value ? "TRUE" : "FALSE";
+                throw new RuntimeError(token, "Type mismatch: expected STRING.");
             default:
                 throw new RuntimeError(token, "Unknown data type.");
         }

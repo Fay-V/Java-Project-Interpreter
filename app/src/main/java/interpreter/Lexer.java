@@ -26,6 +26,7 @@ public class Lexer {
         keywords.put("CHAR", CHAR);
         keywords.put("BOOL", BOOL);
         keywords.put("FLOAT", FLOAT);
+        keywords.put("STRING", STRING);
         keywords.put("IF", IF);
         keywords.put("ELSE", ELSE);
         keywords.put("FOR", FOR);

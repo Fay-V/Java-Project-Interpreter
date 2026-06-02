@@ -49,7 +49,7 @@ public class Parser {
 
     private Statement declaration() {
         Token type = null;
-        TokenType[] tokenTypes = {INT, CHAR, BOOL, FLOAT};
+        TokenType[] tokenTypes = {INT, CHAR, BOOL, FLOAT, STRING};
         for (TokenType tokenType : tokenTypes) {
             if (check(tokenType)) type = advance();
         }

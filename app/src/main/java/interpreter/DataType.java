@@ -1,5 +1,5 @@
 package interpreter;
 
 public enum DataType {
-    INT, FLOAT, CHAR, BOOL
+    INT, FLOAT, CHAR, BOOL, STRING
 }
