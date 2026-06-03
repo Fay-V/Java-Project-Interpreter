@@ -199,7 +199,7 @@ public class Lexer {
             
             char code = peek();
             switch (code){
-                case '#': case '[': case ']': case ':':
+                case '#': case '[': case ']':
                 case '$': case '&': case '"': case '\'':
                     App.error(line, "Escape code '" + code + "' is inside string");
                     advance(); // advance to avoid infinite loop
