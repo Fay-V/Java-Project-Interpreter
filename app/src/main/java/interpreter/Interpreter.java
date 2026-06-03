@@ -160,6 +160,23 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
     }
 
+    @Override
+    public void visitSwitchStmt(Statement.Switch stmt) {
+        Object switchValue = evaluate(stmt.expression);
+        boolean matched = false;
+        for (Statement.Switch.Case c : stmt.cases) {
+            Object labelValue = evaluate(c.label);
+            if (isEqual(switchValue, labelValue)) {
+                execute(c.body);
+                matched = true;
+                break;
+            }
+        }
+        if (!matched && stmt.defaultBody != null) {
+            execute(stmt.defaultBody);
+        }
+    }
+
     // ---------- Expressions ----------
     @Override
     public Object visitLiteralExpr(Expression.Literal expr) {

@@ -1,0 +1,35 @@
+%% LEXOR switch-case demo
+SCRIPT AREA
+START SCRIPT
+DECLARE INT x = 2
+DECLARE CHAR grade = 'B'
+
+SWITCH (x)
+START SWITCH
+CASE 1
+    PRINT: "one"
+CASE 2
+    PRINT: "two"
+CASE 3
+    PRINT: "three"
+DEFAULT
+    PRINT: "other"
+END SWITCH
+
+PRINT: $
+
+SWITCH (grade)
+START SWITCH
+CASE 'A'
+    PRINT: "Excellent"
+CASE 'B'
+    PRINT: "Good"
+CASE 'C'
+    PRINT: "Fair"
+DEFAULT
+    PRINT: "Invalid grade"
+END SWITCH
+
+PRINT: $
+
+END SCRIPT

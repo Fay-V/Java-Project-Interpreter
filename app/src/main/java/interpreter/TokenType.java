@@ -4,6 +4,7 @@ public enum TokenType {
     // Structure
     SCRIPT_AREA, START_SCRIPT, END_SCRIPT,
     START_IF, END_IF, START_FOR, END_FOR, START_REPEAT, END_REPEAT,
+    START_SWITCH, END_SWITCH,
 
     // Keywords
     DECLARE, INT, CHAR, BOOL, FLOAT,
@@ -11,6 +12,7 @@ public enum TokenType {
     IF, ELSE, FOR, REPEAT, WHEN,
     AND, OR, NOT,
     SCRIPT, AREA, START, END, PRINT, SCAN,
+    SWITCH, CASE, DEFAULT,
 
     // Operators and punctuation
     AMPERSAND, PLUS, MINUS, STAR, SLASH, PERCENT,

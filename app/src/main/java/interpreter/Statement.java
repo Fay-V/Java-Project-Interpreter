@@ -12,6 +12,7 @@ public abstract class Statement {
         void visitIfStmt(If stmt);
         void visitForStmt(For stmt);
         void visitRepeatStmt(Repeat stmt);
+        void visitSwitchStmt(Switch stmt);
     }
 
     public abstract void accept(Visitor visitor);
@@ -96,6 +97,31 @@ public abstract class Statement {
         Repeat(interpreter.Expression condition, Statement body) { this.condition = condition; this.body = body; }
         @Override public void accept(Visitor visitor) {
             visitor.visitRepeatStmt(this);
+        }
+    }
+
+    static class Switch extends Statement {
+        final interpreter.Expression expression;
+        final List<Case> cases;
+        final Statement defaultBody;   // may be null
+
+        Switch(interpreter.Expression expression, List<Case> cases, Statement defaultBody) {
+            this.expression = expression;
+            this.cases = cases;
+            this.defaultBody = defaultBody;
+        }
+
+        @Override public void accept(Visitor visitor) {
+            visitor.visitSwitchStmt(this);
+        }
+
+        static class Case {
+            final interpreter.Expression label;
+            final Statement body;
+            Case(interpreter.Expression label, Statement body) {
+                this.label = label;
+                this.body = body;
+            }
         }
     }
 }

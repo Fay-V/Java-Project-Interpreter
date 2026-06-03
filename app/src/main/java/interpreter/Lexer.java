@@ -41,6 +41,9 @@ public class Lexer {
         keywords.put("END", END);
         keywords.put("PRINT", PRINT);
         keywords.put("SCAN", SCAN);
+        keywords.put("SWITCH", SWITCH);
+        keywords.put("CASE", CASE);
+        keywords.put("DEFAULT", DEFAULT);
 
         simpleTokens = new HashMap<>();
         simpleTokens.put('(', LEFT_PAREN);
@@ -292,6 +295,8 @@ public class Lexer {
                     addToken(START_FOR);
                 } else if (matchNextIdentifier("REPEAT")) {
                     addToken(START_REPEAT);
+                } else if (matchNextIdentifier("SWITCH")) {
+                    addToken(START_SWITCH);
                 } else {
                     current = savedCurrent;
                     line = savedLine;
@@ -311,6 +316,8 @@ public class Lexer {
                     addToken(END_FOR);
                 } else if (matchNextIdentifier("REPEAT")) {
                     addToken(END_REPEAT);
+                } else if (matchNextIdentifier("SWITCH")) {
+                    addToken(END_SWITCH);
                 } else {
                     current = savedCurrent;
                     line = savedLine;

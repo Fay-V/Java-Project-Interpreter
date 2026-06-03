@@ -70,6 +70,7 @@ public class Parser {
         if (match(IF)) return ifStatement();
         if (match(FOR)) return forStatement();
         if (match(REPEAT)) return repeatStatement();
+        if (match(SWITCH)) return switchStatement(); 
         return expressionStatement();
     }
 
@@ -163,6 +164,38 @@ public class Parser {
         consumeNewlineOrSkip("Expect newline after START REPEAT.");
         Statement body = block(END_REPEAT);
         return new Statement.Repeat(condition, body);
+    }
+
+    private Statement switchStatement() {
+        consume(LEFT_PAREN, "Expect '(' after SWITCH.");
+        Expression expression = expression();
+        consume(RIGHT_PAREN, "Expect ')' after expression.");
+        skipNewlines();
+        consume(START_SWITCH, "Expect 'START SWITCH'.");
+        consumeNewlineOrSkip("Expect newline after START SWITCH.");
+
+        List<Statement.Switch.Case> cases = new ArrayList<>();
+        Statement defaultBody = null;
+
+        while (!check(END_SWITCH) && !isAtEnd()) {
+            if (match(CASE)) {
+                Expression label = expression();
+                consume(NEWLINE, "Expect newline after case label.");
+                skipNewlines();
+                Statement body = caseBlock();
+                cases.add(new Statement.Switch.Case(label, body));
+            } else if (match(DEFAULT)) {
+                consume(NEWLINE, "Expect newline after DEFAULT.");
+                defaultBody = caseBlock();
+                break;
+            } else {
+                throw error(peek(), "Expect 'CASE', 'DEFAULT', or 'END SWITCH'.");
+            }
+            skipNewlines();
+        }
+
+        consume(END_SWITCH, "Expect 'END SWITCH'.");
+        return new Statement.Switch(expression, cases, defaultBody);
     }
 
     private Statement block(TokenType endType) {
@@ -358,5 +391,15 @@ public class Parser {
     }
 
     private static class ParseError extends RuntimeException {
+    }
+
+    private Statement caseBlock() {
+        List<Statement> statements = new ArrayList<>();
+        while (!check(CASE) && !check(DEFAULT) && !check(END_SWITCH) && !isAtEnd()) {
+            statements.add(statement());
+            consume(NEWLINE, "Expect newline after statement.");
+            skipNewlines();
+        }
+        return new Statement.Block(statements);
     }
 }

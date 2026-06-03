@@ -1,0 +1,8 @@
+SCRIPT AREA
+START SCRIPT
+DECLARE STRING x= "Hello"
+DECLARE STRING y
+PRINT:x & $
+SCAN: x, y
+PRINT: x & " " & [+] & " " & y & $
+END SCRIPT

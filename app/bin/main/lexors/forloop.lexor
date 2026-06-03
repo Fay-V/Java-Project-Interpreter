@@ -5,8 +5,10 @@
 SCRIPT AREA
 START SCRIPT
 DECLARE INT i=1
-FOR (i=1, i <= 3, i = i + 1)
+DECLARE INT y=1
+FOR (i=1, i <= 5, i = i + 1)
 START FOR
-PRINT: i
+y = y * i
+PRINT: y & $
 END FOR
 END SCRIPT
