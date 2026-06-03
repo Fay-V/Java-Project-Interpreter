@@ -22,14 +22,7 @@ public class Parser {
         consume(START_SCRIPT, "Expect 'START SCRIPT'.");
         skipNewlines();
 
-        // Declarations (only at top level)
-        while (match(DECLARE)) {
-            statements.add(declaration());
-            consume(NEWLINE, "Expect newline after declaration.");
-            skipNewlines();
-        }
-
-        // Executable statements
+        // Executable statements (including declarations)
         while (!check(END_SCRIPT) && !isAtEnd()) {
             statements.add(statement());
             if (!check(END_SCRIPT)) {
@@ -71,6 +64,7 @@ public class Parser {
     }
 
     private Statement statement() {
+        if (match(DECLARE)) return declaration();
         if (match(PRINT_COLON)) return printStatement();
         if (match(SCAN_COLON)) return scanStatement();
         if (match(IF)) return ifStatement();

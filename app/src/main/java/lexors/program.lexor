@@ -1,6 +1,42 @@
 SCRIPT AREA
 START SCRIPT
-DECLARE INT x, y
-x = 10 y = 20  %% ❌ Error: Expect newline after statement.
-PRINT: x & y
+DECLARE INT n
+SCAN: n
+DECLARE INT i, j, mid
+mid = n / 2
+
+FOR(i = 0, i <= mid, i = i+1)
+START FOR
+	FOR(j = 0, j < mid - i, j = j+1)
+	START FOR
+            PRINT: " "
+	END FOR
+        PRINT: "*"
+        IF(i > 0)
+	START IF
+        	FOR(j = 0, j < 2 * i - 1, j=j+1)
+		START FOR
+                	PRINT: " "
+		END FOR
+        PRINT: "*"
+        END IF
+	PRINT: $
+END FOR
+FOR(i = mid - 1, i >= 0, i=i-1)
+START FOR
+        FOR(j = 0, j < mid - i, j=j+1)
+	START FOR
+		PRINT: " "
+	END FOR
+        PRINT: "*"
+        IF(i > 0)
+	START IF
+        	FOR(j = 0, j < 2 * i - 1, j=j+1)
+		START FOR
+                	PRINT: " "
+		END FOR
+        PRINT: "*"
+        END IF
+        PRINT: $
+END FOR
 END SCRIPT
